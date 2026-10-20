@@ -5,6 +5,11 @@ import type { NextConfig } from "next";
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Requests forwarded to the backend are buffered; the default 10 MB cut off Excel uploads
+    // in direct mode. On Vercel use NEXT_PUBLIC_UPLOAD_MODE=blob instead (4.5 MB function limit).
+    proxyClientMaxBodySize: "200mb",
+  },
   turbopack: {
     rules: {
       "*.css": {

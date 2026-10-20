@@ -29,7 +29,12 @@ function uploadDirect(url: string, file: File, onProgress: (pct: number) => void
     xhr.withCredentials = true;
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress((e.loaded / e.total) * 100);
     xhr.onload = () => {
-      const body = JSON.parse(xhr.responseText || "{}");
+      let body: { message?: string | string[] } & Partial<Batch> = {};
+      try {
+        body = JSON.parse(xhr.responseText || "{}");
+      } catch {
+        body = { message: `Server membalas HTTP ${xhr.status}. Cek terminal backend.` };
+      }
       if (xhr.status >= 200 && xhr.status < 300) resolve(body as Batch);
       else reject(new Error(Array.isArray(body.message) ? body.message.join(", ") : (body.message ?? `HTTP ${xhr.status}`)));
     };
