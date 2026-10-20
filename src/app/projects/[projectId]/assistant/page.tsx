@@ -88,7 +88,10 @@ function ChatPane({
     }
   }, [firstMessage, sendMessage, filters]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [messages]);
+  // Braces matter: newer browsers return a Promise from scrollIntoView, and an effect may only return a cleanup.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   function submit(text: string) {
     const t = text.trim();
