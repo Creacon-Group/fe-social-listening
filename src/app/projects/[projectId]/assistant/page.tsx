@@ -153,7 +153,9 @@ function ChatPane({
           <p role="alert" className="text-sm text-neg">
             {error.message.includes("503") || error.message.includes("dikonfigurasi")
               ? "AI Assistant belum dikonfigurasi di server (GEMINI_API_KEY / GEMINI_MODEL)."
-              : "Jawaban gagal dibuat. Coba kirim ulang pertanyaan."}
+              : error.message.includes("sibuk")
+                ? "Model AI sedang sibuk di sisi Google. Tunggu sebentar, lalu kirim ulang pertanyaan."
+                : "Jawaban gagal dibuat. Coba kirim ulang pertanyaan."}
           </p>
         )}
         <div ref={endRef} />
