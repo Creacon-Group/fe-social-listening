@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
     // Requests forwarded to the backend are buffered; the default 10 MB cut off Excel uploads
     // in direct mode. On Vercel use NEXT_PUBLIC_UPLOAD_MODE=blob instead (4.5 MB function limit).
     proxyClientMaxBodySize: "200mb",
+    // Default is 30 s; an AI answer with several tool calls can take longer.
+    proxyTimeout: 120_000,
   },
   turbopack: {
     rules: {
