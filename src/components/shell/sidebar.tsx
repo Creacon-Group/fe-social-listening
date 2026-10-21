@@ -13,6 +13,7 @@ const NAV = [
   { slug: "competitors", label: "Kompetitor", keepFilters: true },
   { slug: "assistant", label: "AI Assistant", keepFilters: true },
   { slug: "upload", label: "Upload data", keepFilters: false },
+  { slug: "credits", label: "Kredit AI", keepFilters: false, superadminOnly: true },
 ] as const;
 
 export function Sidebar({ projectId }: { projectId: number }) {
@@ -55,7 +56,7 @@ export function Sidebar({ projectId }: { projectId: number }) {
       </label>
 
       <nav aria-label="Menu" className="-mx-1 flex gap-1 overflow-x-auto pb-1 md:mx-0 md:flex-col md:overflow-visible md:pb-0">
-        {NAV.map((item) => {
+        {NAV.filter((item) => !("superadminOnly" in item) || me?.role === "SUPERADMIN").map((item) => {
           const href = `/projects/${projectId}/${item.slug}`;
           const active = pathname === href;
           return (

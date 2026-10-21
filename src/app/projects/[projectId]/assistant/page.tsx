@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import useSWR from "swr";
 import { Notice, PageHeader } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
+import { CreditsExhausted, creditLine, useCredits } from "@/lib/credits";
 import { type Filters, filterBody, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, SENTIMENT_LABEL, fmtDateTime } from "@/lib/format";
 import { useProjectId } from "@/lib/project";
@@ -77,8 +78,20 @@ function ChatPane({
     [projectId, sessionId],
   );
 
-  const { messages, sendMessage, status, stop, error } = useChat({ id: sessionId, messages: initial, transport, onFinish: onSent });
+  const { data: credits, mutate: refreshCredits } = useCredits();
+  const outOfCredits = !!credits && !credits.unlimited && credits.remaining === 0;
+  const { messages, sendMessage, status, stop, error } = useChat({
+    id: sessionId,
+    messages: initial,
+    transport,
+    onFinish: () => {
+      onSent();
+      void refreshCredits();
+    },
+    onError: () => void refreshCredits(),
+  });
   const busy = status === "submitted" || status === "streaming";
+  const creditError = error?.message.includes("CREDITS_EXHAUSTED");
 
   const sentFirst = useRef(false);
   useEffect(() => {
@@ -95,7 +108,7 @@ function ChatPane({
 
   function submit(text: string) {
     const t = text.trim();
-    if (!t || busy) return;
+    if (!t || busy || outOfCredits) return;
     setInput("");
     void sendMessage({ text: t }, { body: { filter: filterBody(filters) } });
   }
@@ -111,7 +124,8 @@ function ChatPane({
                 <button
                   key={s}
                   onClick={() => submit(s)}
-                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby"
+                  disabled={outOfCredits}
+                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby disabled:opacity-40"
                 >
                   {s}
                 </button>
@@ -149,7 +163,7 @@ function ChatPane({
           ),
         )}
         {status === "submitted" && <p className="text-xs text-muted">Menyiapkan jawaban…</p>}
-        {error && (
+        {error && !creditError && (
           <p role="alert" className="text-sm text-neg">
             {error.message.includes("503") || error.message.includes("dikonfigurasi")
               ? "AI Assistant belum dikonfigurasi di server (GEMINI_API_KEY / GEMINI_MODEL)."
@@ -168,6 +182,11 @@ function ChatPane({
         }}
         className="border-t border-line p-3 md:p-4"
       >
+        {outOfCredits && credits && (
+          <div className="mb-3">
+            <CreditsExhausted credits={credits} />
+          </div>
+        )}
         <p className="mb-2 text-xs text-muted">Memakai filter aktif: {describeFilter(filters)}.</p>
         <div className="flex items-end gap-2">
           <textarea
@@ -181,7 +200,8 @@ function ChatPane({
             }}
             rows={2}
             maxLength={2000}
-            placeholder="Tulis pertanyaan"
+            disabled={outOfCredits}
+            placeholder={outOfCredits ? "Kredit hari ini sudah habis" : "Tulis pertanyaan"}
             aria-label="Pertanyaan untuk AI Assistant"
             className="flex-1 resize-none rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ruby"
           />
@@ -190,13 +210,15 @@ function ChatPane({
               Berhenti
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim()} className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
+            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
               Kirim
             </button>
           )}
         </div>
         <p className="mt-2 text-xs text-muted">
-          Jawaban dibuat AI dari data yang sudah diunggah. Periksa angka penting di halaman Kompetitor sebelum dipakai.
+          {credits && <span className="font-semibold text-ink">{creditLine(credits)} </span>}
+          Satu pertanyaan yang terjawab memakai satu kredit. Jawaban dibuat AI dari data yang sudah diunggah; periksa angka
+          penting di halaman Kompetitor sebelum dipakai.
         </p>
       </form>
     </div>
@@ -229,6 +251,8 @@ export default function AssistantPage() {
   }
 
   const isNew = activeId !== null && pending?.id === activeId;
+  const { data: credits } = useCredits();
+  const outOfCredits = !!credits && !credits.unlimited && credits.remaining === 0;
 
   return (
     <div className="space-y-5">
@@ -267,9 +291,11 @@ export default function AssistantPage() {
         </aside>
 
         {!activeId ? (
-          <div className="rounded-3xl border border-line bg-card p-6">
+          <div className="space-y-4 rounded-3xl border border-line bg-card p-6">
+            {outOfCredits && credits && <CreditsExhausted credits={credits} />}
             <p className="text-sm text-muted">Mulai chat baru, atau pilih chat sebelumnya.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            {credits && <p className="text-xs text-muted">{creditLine(credits)}</p>}
+            <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -278,7 +304,8 @@ export default function AssistantPage() {
                     setPending({ id: created.id, text: s });
                     setActiveId(created.id);
                   }}
-                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby"
+                  disabled={outOfCredits}
+                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby disabled:opacity-40"
                 >
                   {s}
                 </button>

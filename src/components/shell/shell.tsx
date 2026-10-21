@@ -8,7 +8,7 @@ import { Sidebar } from "./sidebar";
 export function Shell({ children }: { children: React.ReactNode }) {
   const projectId = useProjectId();
   const pathname = usePathname();
-  const showFilters = !pathname.endsWith("/upload");
+  const showFilters = !pathname.endsWith("/upload") && !pathname.endsWith("/credits");
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col px-4 md:flex-row md:px-0">

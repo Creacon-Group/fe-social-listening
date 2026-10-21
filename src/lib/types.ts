@@ -3,13 +3,34 @@
 export type Channel = "X" | "TIKTOK" | "INSTAGRAM" | "ONLINE_NEWS" | "FACEBOOK" | "YOUTUBE" | "BLOG";
 export type Sentiment = "POSITIVE" | "NEUTRAL" | "NEGATIVE";
 export type RangePreset = "today" | "7d" | "30d" | "custom";
-export type Role = "ADMIN" | "ANALYST" | "VIEWER";
+export type Role = "SUPERADMIN" | "ADMIN" | "ANALYST" | "VIEWER";
 
 export interface User {
   id: number;
   email: string;
   name: string;
   role: Role;
+}
+
+/** GET /assistant/credits. Credits reset at 00:00 WIB. */
+export interface CreditStatus {
+  unlimited: boolean;
+  limit: number;
+  used: number;
+  remaining: number | null;
+  resetsAt: string;
+  contact: string | null;
+}
+
+/** GET /admin/users (superadmin). */
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: Role;
+  dailyChatCredits: number;
+  usedToday: number;
+  bonusToday: number;
 }
 
 export interface Project {
