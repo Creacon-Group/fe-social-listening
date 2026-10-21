@@ -130,7 +130,8 @@ export default function UploadPage() {
           access: "private",
           handleUploadUrl: "/api/blob/upload",
           multipart: true,
-          onUploadProgress: (e) => setProgress(e.percentage),
+          // No onUploadProgress: with it the SDK streams each part, and a retried part then fails
+          // with "ReadableStream is disturbed". Without it parts are Blobs and retries work.
         });
         await apiSend(`/api/projects/${projectId}/ingestion/excel`, "POST", { fileUrl: blob.url, fileName: file.name });
       } else {
@@ -179,7 +180,7 @@ export default function UploadPage() {
               disabled={!file || progress !== null}
               className="rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
             >
-              {progress !== null ? `Mengunggah ${Math.round(progress)}%` : "Unggah dan proses"}
+              {progress === null ? "Unggah dan proses" : MODE === "blob" ? "Mengunggah…" : `Mengunggah ${Math.round(progress)}%`}
             </button>
           </div>
           {error && (
