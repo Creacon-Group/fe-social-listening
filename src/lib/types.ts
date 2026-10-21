@@ -105,6 +105,8 @@ export interface Mention {
   sentimentLabel: Sentiment;
   tags: string[] | null;
   brands: { id: number; name: string; isOwn: boolean }[];
+  /** Card extras from the export. `where` = account whose post a comment replies to. */
+  preview: { where: string | null; images: string[]; userLink: string | null; bookmarks: number };
 }
 
 export interface MentionPage {

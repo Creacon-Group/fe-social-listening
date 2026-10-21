@@ -2,57 +2,15 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { Notice, PageHeader, SentimentChip, Skeleton } from "@/components/ui";
+import { MentionCard } from "@/components/mention-card";
+import { Notice, PageHeader, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
-import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime, fmtPeriod } from "@/lib/format";
+import { fmt, fmtPeriod } from "@/lib/format";
 import { useBrands, useProjectId } from "@/lib/project";
-import type { Mention, MentionPage } from "@/lib/types";
+import type { MentionPage } from "@/lib/types";
 
 const PAGE_SIZE = 20;
-
-function MentionCard({ m }: { m: Mention }) {
-  return (
-    <article className="rounded-3xl border border-line bg-card p-5">
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <span className="font-semibold">{m.authorName ?? m.authorHandle ?? "Tanpa nama"}</span>
-        {m.authorHandle && m.authorName && <span className="text-muted">@{m.authorHandle}</span>}
-        {m.authorVerified && <span className="text-xs font-semibold text-violet">Terverifikasi</span>}
-        {m.authorFollowers ? <span className="text-xs text-muted">{fmtCompact(m.authorFollowers)} pengikut</span> : null}
-        <span className="ml-auto flex items-center gap-2">
-          <SentimentChip s={m.sentimentLabel} />
-        </span>
-      </header>
-      <p className="mt-1 text-xs text-muted">
-        {CHANNEL_LABEL[m.channel]}
-        {m.postType ? `, ${m.postType}` : ""}, {fmtDateTime(m.publishedAt)}
-      </p>
-      {m.title && <h3 className="mt-3 font-semibold">{m.title}</h3>}
-      <p className="mt-2 whitespace-pre-line break-words text-[0.95rem] leading-relaxed">
-        {m.content || <span className="text-muted">Tidak ada teks (mis. komentar berisi stiker).</span>}
-      </p>
-      <footer className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
-        <span className="num">{fmt(m.engagements)} engagement</span>
-        {m.reach > 0 && <span className="num">{fmtCompact(m.reach)} reach</span>}
-        <span className="flex flex-wrap gap-1">
-          {m.brands.map((b) => (
-            <span
-              key={b.id}
-              className={`rounded-full px-2 py-0.5 font-semibold ${b.isOwn ? "bg-ruby-soft text-ruby" : "bg-surface text-ink"}`}
-            >
-              {b.name}
-            </span>
-          ))}
-        </span>
-        {m.url && (
-          <a href={m.url} target="_blank" rel="noreferrer noopener" className="ml-auto font-semibold text-ink hover:underline">
-            Buka postingan asli
-          </a>
-        )}
-      </footer>
-    </article>
-  );
-}
 
 export default function MentionsPage() {
   const projectId = useProjectId();
