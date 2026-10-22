@@ -11,7 +11,12 @@ const NAV = [
   { slug: "overview", label: "Ringkasan", keepFilters: true },
   { slug: "mentions", label: "Mentions", keepFilters: true },
   { slug: "competitors", label: "Kompetitor", keepFilters: true },
+  { slug: "demographics", label: "Demografi", keepFilters: true },
+  { slug: "influencers", label: "Influencer & Sumber", keepFilters: true },
+  { slug: "hashtags", label: "Hashtag", keepFilters: true },
+  { slug: "insights", label: "AI Insights", keepFilters: true },
   { slug: "assistant", label: "AI Assistant", keepFilters: true },
+  { slug: "reports", label: "Laporan", keepFilters: true },
   { slug: "upload", label: "Upload data", keepFilters: false },
   { slug: "credits", label: "Kredit AI", keepFilters: false, superadminOnly: true },
 ] as const;

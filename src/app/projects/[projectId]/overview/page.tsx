@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import useSWR from "swr";
+import { ReportActions } from "@/components/report-actions";
 import { SovRibbon } from "@/components/sov-ribbon";
+import { TrendCharts } from "@/components/trend-charts";
 import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
 import { useBrands, useProjectId } from "@/lib/project";
-import type { Competitors, Overview } from "@/lib/types";
+import type { Competitors, Overview, Trend } from "@/lib/types";
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -25,6 +27,7 @@ export default function OverviewPage() {
   const { filters } = useFilters();
   const q = filterQuery(filters);
   const overview = useSWR<Overview>(`/api/projects/${projectId}/analytics/overview?${q}`, fetcher, { keepPreviousData: true });
+  const trend = useSWR<Trend>(`/api/projects/${projectId}/analytics/trend?${q}`, fetcher, { keepPreviousData: true });
   const comp = useSWR<Competitors>(`/api/projects/${projectId}/analytics/competitors?${q}`, fetcher, { keepPreviousData: true });
   const { data: brands } = useBrands(projectId);
 
@@ -35,6 +38,7 @@ export default function OverviewPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Ringkasan" detail={o ? fmtPeriod(o.period) : undefined} />
+      <ReportActions projectId={projectId} compact />
 
       {overview.error ? (
         <Notice tone="error">Data ringkasan gagal dimuat: {overview.error.message}</Notice>
@@ -60,6 +64,10 @@ export default function OverviewPage() {
             <Stat label="Engagement" value={fmtCompact(o.engagements)} />
             <Stat label="Estimasi reach" value={fmtCompact(o.reach)} />
           </div>
+
+          <Panel title="Tren harian">
+            {trend.data ? <TrendCharts days={trend.data.days} /> : <Skeleton className="h-56" />}
+          </Panel>
 
           <div className="grid gap-5 xl:grid-cols-5">
             <Panel title="Sentimen" aside={<SentimentLegend />} className="xl:col-span-2">

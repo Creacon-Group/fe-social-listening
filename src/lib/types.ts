@@ -146,3 +146,98 @@ export interface StoredChatMessage {
   content: string;
   createdAt: string;
 }
+
+// ───────── Analysis modules ─────────
+export interface TrendDay extends Counts {
+  day: string;
+  netSentiment: number;
+  reach: number;
+  engagements: number;
+}
+export interface Trend {
+  period: Period;
+  days: TrendDay[];
+}
+
+export interface Influencer extends Counts {
+  channel: Channel;
+  handle: string;
+  name: string | null;
+  followers: number;
+  verified: boolean;
+  userLink: string | null;
+  netSentiment: number;
+  reach: number;
+  engagements: number;
+}
+export interface Source extends Counts {
+  host: string;
+  channel: Channel;
+  netSentiment: number;
+  reach: number;
+  engagements: number;
+}
+export interface Influencers {
+  period: Period;
+  authors: Influencer[];
+  sources: Source[];
+}
+
+export interface Demographics {
+  period: Period;
+  total: number;
+  gender: (Counts & { label: string; netSentiment: number })[];
+  located: number;
+  provinces: (Counts & { code: string; name: string; netSentiment: number; reach: number })[];
+  countries: (Counts & { code: string; netSentiment: number })[];
+}
+
+export interface Hashtag extends Counts {
+  tag: string;
+  netSentiment: number;
+  engagements: number;
+  reach: number;
+  topChannel: Channel | null;
+}
+export interface Hashtags {
+  period: Period;
+  mentionsWithHashtag: number;
+  uniqueHashtags: number;
+  hashtags: Hashtag[];
+}
+
+export interface InsightSummary {
+  id: number;
+  periodFrom: string;
+  periodTo: string;
+  headline: string;
+  model: string | null;
+  createdAt: string;
+}
+export interface Insight {
+  id: number;
+  period: Period;
+  headline: string;
+  findings: { title: string; body: string; citations: number[]; refs: number[] }[];
+  sources: {
+    ref: number;
+    id: number;
+    url: string | null;
+    channel: Channel;
+    author: string | null;
+    text: string;
+    publishedAt: string;
+    sentiment: Sentiment;
+  }[];
+  model: string | null;
+  createdAt: string;
+}
+
+export interface ReportSettings {
+  clientName: string | null;
+  recipients: string[];
+  monthlyEnabled: boolean;
+  monthlyDay: number;
+  lastMonthlyReport: string | null;
+  emailConfigured: boolean;
+}
