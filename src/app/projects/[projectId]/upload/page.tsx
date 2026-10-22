@@ -13,12 +13,12 @@ import type { Batch, BatchStatus } from "@/lib/types";
 const MODE = process.env.NEXT_PUBLIC_UPLOAD_MODE === "blob" ? "blob" : "direct";
 
 const STATUS: Record<BatchStatus, { label: string; tone: string }> = {
-  PENDING: { label: "Menunggu", tone: "bg-surface text-muted" },
-  PROCESSING: { label: "Diproses", tone: "bg-violet/10 text-violet" },
-  PAUSED: { label: "Dilanjutkan otomatis", tone: "bg-violet/10 text-violet" },
-  COMPLETED: { label: "Selesai", tone: "bg-pos/10 text-pos" },
-  COMPLETED_WITH_ERRORS: { label: "Selesai, ada baris gagal", tone: "bg-neg/10 text-neg" },
-  FAILED: { label: "Gagal", tone: "bg-neg/10 text-neg" },
+  PENDING: { label: "Queued", tone: "bg-surface text-muted" },
+  PROCESSING: { label: "Processing", tone: "bg-surface text-ink underline underline-offset-2" },
+  PAUSED: { label: "Resuming", tone: "bg-surface text-ink underline underline-offset-2" },
+  COMPLETED: { label: "Done", tone: "bg-pos/10 text-pos" },
+  COMPLETED_WITH_ERRORS: { label: "Done, some rows failed", tone: "bg-neg/10 text-neg" },
+  FAILED: { label: "Failed", tone: "bg-neg/10 text-neg" },
 };
 const ACTIVE: BatchStatus[] = ["PENDING", "PROCESSING", "PAUSED"];
 
@@ -33,12 +33,12 @@ function uploadDirect(url: string, file: File, onProgress: (pct: number) => void
       try {
         body = JSON.parse(xhr.responseText || "{}");
       } catch {
-        body = { message: `Server membalas HTTP ${xhr.status}. Cek terminal backend.` };
+        body = { message: `The server answered HTTP ${xhr.status}. Check the backend logs.` };
       }
       if (xhr.status >= 200 && xhr.status < 300) resolve(body as Batch);
       else reject(new Error(Array.isArray(body.message) ? body.message.join(", ") : (body.message ?? `HTTP ${xhr.status}`)));
     };
-    xhr.onerror = () => reject(new Error("Koneksi terputus saat mengunggah"));
+    xhr.onerror = () => reject(new Error("The connection dropped during the upload. Try again."));
     const form = new FormData();
     form.append("file", file);
     xhr.send(form);
@@ -62,30 +62,30 @@ function BatchRow({ projectId, batch }: { projectId: number; batch: Batch }) {
         <span className="text-xs text-muted">{fmtDateTime(batch.createdAt)}</span>
       </div>
       <p className="num mt-1.5 text-sm text-muted">
-        {fmt(batch.processedRows)} baris dibaca: {fmt(batch.insertedRows)} baru, {fmt(batch.skippedRows)} duplikat
-        dilewati, {fmt(batch.failedRows)} gagal
+        {fmt(batch.processedRows)} rows read: {fmt(batch.insertedRows)} new, {fmt(batch.skippedRows)} already stored,{" "}
+        {fmt(batch.failedRows)} failed
       </p>
       {batch.errorMessage && <p className="mt-1 text-sm text-neg">{batch.errorMessage}</p>}
       {unmapped.length > 0 && (
         <p className="mt-1 text-xs text-muted">
-          Keyword tanpa brand: {unmapped.map(([k, n]) => `${k} (${fmt(n)})`).join(", ")}. Tambahkan sebagai alias brand bila
-          perlu.
+          Keywords without a brand: {unmapped.map(([k, n]) => `${k} (${fmt(n)})`).join(", ")}. Add them as brand aliases if
+          they belong to a brand.
         </p>
       )}
       {batch.failedRows > 0 && (
         <button onClick={() => setOpen((v) => !v)} className="mt-2 text-xs font-semibold text-ink hover:underline">
-          {open ? "Sembunyikan baris gagal" : "Lihat baris gagal"}
+          {open ? "Hide failed rows" : "Show failed rows"}
         </button>
       )}
       {open && errors && (
-        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl bg-surface p-3 text-xs">
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-md bg-surface p-3 text-xs">
           {errors.items.map((e) => (
             <li key={e.id}>
               <span className="font-semibold">{e.rowRef}</span>: {e.message}
             </li>
           ))}
           {errors.total > errors.items.length && (
-            <li className="text-muted">dan {fmt(errors.total - errors.items.length)} baris lainnya</li>
+            <li className="text-muted">and {fmt(errors.total - errors.items.length)} more rows</li>
           )}
         </ul>
       )}
@@ -151,14 +151,14 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Upload data" detail="Ekspor Excel dari Zanroo (.xlsx)" />
+      <PageHeader title="Upload data" detail="Excel exports from Zanroo (.xlsx)" />
 
       {me && !canUpload ? (
-        <Notice>Akun viewer hanya bisa melihat data. Minta admin untuk mengunggah file.</Notice>
+        <Notice>Viewer accounts can only read data. Ask an admin to upload the file.</Notice>
       ) : (
         <Panel>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex-1 cursor-pointer rounded-2xl border-2 border-dashed border-line px-5 py-8 text-center text-sm hover:border-ruby">
+            <label className="flex-1 cursor-pointer rounded-[10px] border-2 border-dashed border-line px-5 py-8 text-center text-sm hover:border-ink">
               <input
                 ref={inputRef}
                 type="file"
@@ -172,15 +172,15 @@ export default function UploadPage() {
                   <span className="text-muted">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
                 </span>
               ) : (
-                <span className="text-muted">Pilih file Excel. Baris dengan MID yang sudah ada akan dilewati.</span>
+                <span className="text-muted">Choose an Excel file. Rows already stored (same MID) are skipped, and only filled in where data is missing.</span>
               )}
             </label>
             <button
               onClick={start}
               disabled={!file || progress !== null}
-              className="rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
+              className="rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
             >
-              {progress === null ? "Unggah dan proses" : MODE === "blob" ? "Mengunggah…" : `Mengunggah ${Math.round(progress)}%`}
+              {progress === null ? "Upload and process" : MODE === "blob" ? "Uploading…" : `Uploading ${Math.round(progress)}%`}
             </button>
           </div>
           {error && (
@@ -191,11 +191,11 @@ export default function UploadPage() {
         </Panel>
       )}
 
-      <Panel title="Riwayat upload">
+      <Panel title="Upload history">
         {!batches ? (
-          <p className="text-sm text-muted">Memuat…</p>
+          <p className="text-sm text-muted">Loading…</p>
         ) : batches.length === 0 ? (
-          <p className="text-sm text-muted">Belum ada file yang diunggah ke project ini.</p>
+          <p className="text-sm text-muted">No files uploaded to this project yet.</p>
         ) : (
           <ul className="divide-y divide-line">
             {batches.map((b) => (

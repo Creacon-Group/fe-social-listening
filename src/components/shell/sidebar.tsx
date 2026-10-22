@@ -7,19 +7,45 @@ import { apiSend, fetcher } from "@/lib/api";
 import { useMe } from "@/lib/project";
 import type { Project } from "@/lib/types";
 
-const NAV = [
-  { slug: "overview", label: "Ringkasan", keepFilters: true },
-  { slug: "mentions", label: "Mentions", keepFilters: true },
-  { slug: "competitors", label: "Kompetitor", keepFilters: true },
-  { slug: "demographics", label: "Demografi", keepFilters: true },
-  { slug: "influencers", label: "Influencer & Sumber", keepFilters: true },
-  { slug: "hashtags", label: "Hashtag", keepFilters: true },
-  { slug: "insights", label: "AI Insights", keepFilters: true },
-  { slug: "assistant", label: "AI Assistant", keepFilters: true },
-  { slug: "reports", label: "Laporan", keepFilters: true },
-  { slug: "upload", label: "Upload data", keepFilters: false },
-  { slug: "credits", label: "Kredit AI", keepFilters: false, superadminOnly: true },
-] as const;
+type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean };
+
+/** Grouped the way the project brief groups modules: monitor, analyze, AI, reports. */
+const NAV: { group: string; items: NavItem[] }[] = [
+  {
+    group: "Monitor",
+    items: [
+      { slug: "overview", label: "Summary", keepFilters: true },
+      { slug: "mentions", label: "Mentions", keepFilters: true },
+      { slug: "competitors", label: "Competitors", keepFilters: true },
+    ],
+  },
+  {
+    group: "Analyze",
+    items: [
+      { slug: "demographics", label: "Demographics", keepFilters: true },
+      { slug: "influencers", label: "Influencers & sources", keepFilters: true },
+      { slug: "hashtags", label: "Hashtags", keepFilters: true },
+    ],
+  },
+  {
+    group: "AI",
+    items: [
+      { slug: "insights", label: "Insights", keepFilters: true },
+      { slug: "assistant", label: "Brand assistant", keepFilters: true },
+    ],
+  },
+  {
+    group: "Reports",
+    items: [{ slug: "reports", label: "Export & email", keepFilters: true }],
+  },
+  {
+    group: "Manage",
+    items: [
+      { slug: "upload", label: "Upload data", keepFilters: false },
+      { slug: "credits", label: "Assistant credits", keepFilters: false, superadminOnly: true },
+    ],
+  },
+];
 
 export function Sidebar({ projectId }: { projectId: number }) {
   const pathname = usePathname();
@@ -34,23 +60,43 @@ export function Sidebar({ projectId }: { projectId: number }) {
     router.replace("/login");
   }
 
+  const groups = NAV.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => !i.superadminOnly || me?.role === "SUPERADMIN"),
+  })).filter((g) => g.items.length);
+
+  const link = (item: NavItem) => {
+    const href = `/projects/${projectId}/${item.slug}`;
+    const active = pathname === href;
+    return (
+      <Link
+        key={item.slug}
+        href={item.keepFilters && query ? `${href}?${query}` : href}
+        aria-current={active ? "page" : undefined}
+        className={`flex min-h-9 items-center whitespace-nowrap rounded-md px-2.5 text-sm ${
+          active ? "bg-signal font-semibold text-ink" : "text-muted hover:bg-card hover:text-ink"
+        }`}
+      >
+        {item.label}
+      </Link>
+    );
+  };
+
   return (
-    <aside className="flex shrink-0 flex-col gap-4 border-line md:sticky md:top-0 md:h-screen md:w-60 md:border-r md:py-6 md:pl-5 md:pr-4">
-      <div className="flex items-center gap-2 px-1 pt-4 md:pt-0">
-        <span className="h-2.5 w-2.5 rounded-full bg-ruby" />
-        <span className="h-2.5 w-2.5 rounded-full bg-violet" />
-        <span className="ml-1 text-sm font-bold tracking-tight">Social Listening</span>
-        <button onClick={logout} className="ml-auto text-xs font-semibold text-muted hover:text-ink md:hidden">
-          Keluar
+    <aside className="flex shrink-0 flex-col gap-4 md:sticky md:top-0 md:h-screen md:w-56 md:overflow-y-auto md:border-r md:border-line md:py-6 md:pl-5 md:pr-4">
+      <div className="flex items-center gap-2 pt-4 md:pt-0">
+        <span className="wide text-[1.05rem] font-extrabold leading-none">Social Listening</span>
+        <button onClick={logout} className="ml-auto min-h-9 text-xs font-semibold text-muted hover:text-ink md:hidden">
+          Sign out
         </button>
       </div>
 
       <label className="block">
-        <span className="sr-only">Project</span>
+        <span className="mb-1 block text-xs text-muted">Project</span>
         <select
           value={projectId}
           onChange={(e) => router.push(`/projects/${e.target.value}/overview`)}
-          className="w-full rounded-xl border border-line bg-card px-3 py-2 text-sm font-semibold"
+          className="min-h-10 w-full rounded-md border border-line bg-card px-2.5 text-sm font-semibold"
         >
           {(projects ?? []).map((p) => (
             <option key={p.id} value={p.id}>
@@ -60,30 +106,24 @@ export function Sidebar({ projectId }: { projectId: number }) {
         </select>
       </label>
 
-      <nav aria-label="Menu" className="-mx-1 flex gap-1 overflow-x-auto pb-1 md:mx-0 md:flex-col md:overflow-visible md:pb-0">
-        {NAV.filter((item) => !("superadminOnly" in item) || me?.role === "SUPERADMIN").map((item) => {
-          const href = `/projects/${projectId}/${item.slug}`;
-          const active = pathname === href;
-          return (
-            <Link
-              key={item.slug}
-              href={item.keepFilters && query ? `${href}?${query}` : href}
-              aria-current={active ? "page" : undefined}
-              className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors ${
-                active ? "bg-ink font-semibold text-white" : "text-muted hover:bg-card hover:text-ink"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Phones: one scrollable row. Desktop: grouped column. */}
+      <nav aria-label="Menu" className="-mx-1 flex gap-1 overflow-x-auto pb-1 md:hidden">
+        {groups.flatMap((g) => g.items).map(link)}
+      </nav>
+      <nav aria-label="Menu" className="hidden space-y-4 md:block">
+        {groups.map((g) => (
+          <div key={g.group}>
+            <p className="mb-1 px-2.5 text-xs text-muted">{g.group}</p>
+            <div className="flex flex-col gap-0.5">{g.items.map(link)}</div>
+          </div>
+        ))}
       </nav>
 
       <div className="mt-auto hidden border-t border-line pt-4 text-sm md:block">
         <p className="font-semibold">{me?.name ?? " "}</p>
         <p className="truncate text-xs text-muted">{me?.email}</p>
-        <button onClick={logout} className="mt-3 text-xs font-semibold text-muted hover:text-ink">
-          Keluar
+        <button onClick={logout} className="mt-2 min-h-9 text-xs font-semibold text-muted hover:text-ink">
+          Sign out
         </button>
       </div>
     </aside>

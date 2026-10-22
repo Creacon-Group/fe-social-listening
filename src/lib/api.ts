@@ -16,7 +16,7 @@ async function parse<T>(res: Response): Promise<T> {
     location.href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
   }
   if (!res.ok) {
-    let message = `Permintaan gagal (${res.status})`;
+    let message = `Request failed (HTTP ${res.status})`;
     try {
       const body = await res.json();
       message = Array.isArray(body.message) ? body.message.join(", ") : (body.message ?? message);

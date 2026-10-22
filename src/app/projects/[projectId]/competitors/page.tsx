@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import useSWR from "swr";
 import { SovRibbon } from "@/components/sov-ribbon";
-import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
+import { BrandName, Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { fmt, fmtCompact, fmtDay, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
@@ -65,33 +65,33 @@ export default function CompetitorsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Kompetitor" detail={data ? fmtPeriod(data.period) : undefined} />
+      <PageHeader title="Competitors" detail={data ? fmtPeriod(data.period) : undefined} />
 
       {error ? (
-        <Notice tone="error">Perbandingan brand gagal dimuat: {error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load the brand comparison: {error.message}</Notice>
       ) : !data ? (
         <>
           <Skeleton className="h-40" />
           <Skeleton className="h-72" />
         </>
       ) : data.brands.length === 0 ? (
-        <Notice>Tidak ada mention brand pada filter ini.</Notice>
+        <Notice>No brand mentions match these filters.</Notice>
       ) : (
         <>
-          <Panel title="Share of voice" aside={`${fmt(data.totalBrandMentions)} sebutan brand`}>
+          <Panel title="Share of voice" aside={`${fmt(data.totalBrandMentions)} brand mentions`}>
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <p>
-                <span className="num text-5xl font-bold tracking-tight text-ruby">{fmtPct(data.own.sov)}</span>
+                <span className="wide num mark text-5xl font-extrabold">{fmtPct(data.own.sov)}</span>
               </p>
               <p className="max-w-md pb-1.5 text-sm text-muted">
-                {ownNames} disebut di {fmt(data.own.total)} mention unik. Net sentiment gabungan{" "}
+                Your brands ({ownNames}) appear in {fmt(data.own.total)} unique mentions, with a combined net sentiment of{" "}
                 <span className="num font-semibold text-ink">{fmtSigned(data.own.netSentiment)}</span>.
               </p>
             </div>
             <SovRibbon competitors={data} brandColors={brands} />
           </Panel>
 
-          <Panel title="Perbandingan per brand" aside={<SentimentLegend />}>
+          <Panel title="Brand by brand" aside={<SentimentLegend />}>
             <div className="-mx-2 overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
@@ -100,20 +100,19 @@ export default function CompetitorsPage() {
                     <th className="px-2 py-2 text-right font-medium">Volume</th>
                     <th className="px-2 py-2 text-right font-medium">SOV</th>
                     <th className="px-2 py-2 font-medium">Net sentiment</th>
-                    <th className="w-[26%] px-2 py-2 font-medium">Sentimen</th>
-                    <th className="px-2 py-2 text-right font-medium" title="Volume brand dibagi mention unik brand sendiri">
-                      Rasio vs {ownNames || "brand sendiri"}
+                    <th className="w-[26%] px-2 py-2 font-medium">Sentiment</th>
+                    <th className="px-2 py-2 text-right font-medium" title="Brand volume divided by your brands' unique mentions">
+                      Ratio to {ownNames || "your brands"}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.brands.map((b) => (
-                    <tr key={b.brandId} className={`border-b border-line last:border-0 ${b.isOwn ? "bg-ruby-soft/40" : ""}`}>
+                    <tr key={b.brandId} className="border-b border-line last:border-0">
                       <td className="px-2 py-3">
                         <span className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ background: colorOf(b.brandId) }} />
-                          <span className={b.isOwn ? "font-bold" : "font-medium"}>{b.name}</span>
-                          {b.isOwn && <span className="text-xs text-muted">milik sendiri</span>}
+                          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: colorOf(b.brandId) }} />
+                          <BrandName name={b.name} own={b.isOwn} />
                         </span>
                       </td>
                       <td className="num px-2 py-3 text-right">{fmt(b.total)}</td>
@@ -127,7 +126,7 @@ export default function CompetitorsPage() {
                       <td className="num px-2 py-3 text-right">
                         {b.ratioToOwn === null
                           ? "–"
-                          : `${b.ratioToOwn.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`}
+                          : `${b.ratioToOwn.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`}
                       </td>
                     </tr>
                   ))}
@@ -135,13 +134,13 @@ export default function CompetitorsPage() {
               </table>
             </div>
             <p className="mt-3 text-xs text-muted">
-              Mention yang menyebut dua brand dihitung untuk keduanya, sehingga SOV semua brand berjumlah 100%.
+              A mention that names two brands counts for both, so share of voice across brands adds up to 100%.
             </p>
           </Panel>
 
-          <Panel title="Volume harian per brand">
+          <Panel title="Daily mentions by brand">
             {trend.length < 2 ? (
-              <p className="text-sm text-muted">Pilih rentang lebih dari satu hari untuk melihat tren.</p>
+              <p className="text-sm text-muted">Pick a period longer than one day to see the trend.</p>
             ) : (
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">

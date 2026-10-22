@@ -15,7 +15,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <Sidebar projectId={projectId} />
       <main className="min-w-0 flex-1 space-y-5 py-5 md:px-8 md:py-6">
         {showFilters && (
-          <div className="z-20 -mx-1 bg-surface/90 px-1 py-1 backdrop-blur md:sticky md:top-0">
+          <div className="z-20 -mx-4 border-b border-line bg-surface px-4 pb-3 pt-1 md:sticky md:top-0 md:-mx-8 md:px-8 md:pt-4">
             <FilterBar projectId={projectId} />
           </div>
         )}

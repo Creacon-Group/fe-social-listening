@@ -6,8 +6,8 @@ import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime } from "@/lib/format";
 import type { Mention } from "@/lib/types";
 
 const POST_TYPE: Record<string, string> = {
-  Commented: "Komentar",
-  Posted: "Postingan",
+  Commented: "Comment",
+  Posted: "Post",
   Tweeted: "Tweet",
   Quoted: "Quote",
   Shared: "Share",
@@ -46,11 +46,11 @@ function Thumb({ src, href, className }: { src: string; href: string | null; cla
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={() => setOk(false)}
-      className={`${className} shrink-0 rounded-xl border border-line bg-surface object-cover`}
+      className={`${className} shrink-0 rounded-md border border-line bg-surface object-cover`}
     />
   );
   return href ? (
-    <a href={href} target="_blank" rel="noreferrer noopener" aria-label="Buka postingan asli" className="shrink-0">
+    <a href={href} target="_blank" rel="noreferrer noopener" aria-label="Open original post" className="shrink-0">
       {img}
     </a>
   ) : (
@@ -70,7 +70,7 @@ function Metric({ label, value }: { label: string; value: number }) {
 export function MentionCard({ m }: { m: Mention }) {
   const [expanded, setExpanded] = useState(false);
   const handle = m.authorHandle?.replace(/^@/, "") || null; // YouTube handles already start with @
-  const name = m.authorName ?? (handle ? `@${handle}` : "Tanpa nama");
+  const name = m.authorName ?? (handle ? `@${handle}` : "Unknown author");
   const showHandle = handle && m.authorName && m.authorName.replace(/^@/, "") !== handle;
   const isComment = m.postType === "Commented";
   const image = m.preview.images[0] ?? youtubeThumb(m.url);
@@ -79,7 +79,7 @@ export function MentionCard({ m }: { m: Mention }) {
   const hasParent = isComment && (m.title || m.preview.where);
 
   return (
-    <article className="rounded-3xl border border-line bg-card p-5">
+    <article className="rounded-[10px] border border-line bg-card p-5">
       <header className="flex items-start gap-3">
         <span
           aria-hidden
@@ -97,11 +97,14 @@ export function MentionCard({ m }: { m: Mention }) {
               <span className="font-semibold">{name}</span>
             )}
             {showHandle && <span className="truncate text-muted">@{handle}</span>}
-            {m.authorVerified && <span className="text-xs font-semibold text-violet">Terverifikasi</span>}
-            {m.authorFollowers ? <span className="text-xs text-muted">{fmtCompact(m.authorFollowers)} pengikut</span> : null}
+            {m.authorVerified && <span className="text-xs font-semibold text-ink">Verified</span>}
+            {m.authorFollowers ? <span className="text-xs text-muted">{fmtCompact(m.authorFollowers)} followers</span> : null}
           </p>
-          <p className="mt-0.5 text-xs text-muted">
-            {CHANNEL_LABEL[m.channel]} · {POST_TYPE[m.postType ?? ""] ?? m.postType ?? "Mention"} · {fmtDateTime(m.publishedAt)}
+          <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted">
+            <span>
+              {CHANNEL_LABEL[m.channel]} {(POST_TYPE[m.postType ?? ""] ?? m.postType ?? "mention").toLowerCase()}
+            </span>
+            <time dateTime={m.publishedAt}>{fmtDateTime(m.publishedAt)}</time>
           </p>
         </div>
         <SentimentChip s={m.sentimentLabel} />
@@ -109,13 +112,13 @@ export function MentionCard({ m }: { m: Mention }) {
 
       {hasParent ? (
         // A comment: show the post it replies to, like the source tool does.
-        <div className="mt-4 flex gap-3 rounded-2xl border border-line bg-surface/60 p-3">
+        <div className="mt-4 flex gap-3 rounded-[10px] border border-line bg-surface/60 p-3">
           {image && <Thumb src={image} href={m.url} className="h-20 w-20" />}
           <div className="min-w-0 text-sm">
             <p className="text-xs text-muted">
-              Membalas postingan
+              Reply to a post
               {m.preview.where ? (
-                <span className="font-semibold text-ink"> {/^[^@\s]+$/.test(m.preview.where) ? "@" : ""}{m.preview.where}</span>
+                <span className="font-semibold text-ink"> by {/^[^@\s]+$/.test(m.preview.where) ? "@" : ""}{m.preview.where}</span>
               ) : null}
             </p>
             {m.title && <p className="mt-1 line-clamp-3 break-words leading-relaxed">{m.title}</p>}
@@ -131,11 +134,11 @@ export function MentionCard({ m }: { m: Mention }) {
           <p
             className={`whitespace-pre-line break-words text-[0.95rem] leading-relaxed ${long && !expanded ? "line-clamp-6" : ""}`}
           >
-            {text || <span className="text-muted">Tidak ada teks (mis. komentar berisi stiker).</span>}
+            {text || <span className="text-muted">No text (for example a sticker-only comment).</span>}
           </p>
           {long && (
             <button onClick={() => setExpanded((v) => !v)} className="mt-1 text-xs font-semibold text-ink hover:underline">
-              {expanded ? "Tutup" : "Selengkapnya"}
+              {expanded ? "Show less" : "Show more"}
             </button>
           )}
         </div>
@@ -143,11 +146,11 @@ export function MentionCard({ m }: { m: Mention }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <Metric label="suka" value={m.likes} />
-        <Metric label="komentar" value={m.comments} />
-        <Metric label="share" value={m.shares} />
+        <Metric label="likes" value={m.likes} />
+        <Metric label="comments" value={m.comments} />
+        <Metric label="shares" value={m.shares} />
         <Metric label="views" value={m.views} />
-        <Metric label="disimpan" value={m.preview.bookmarks} />
+        <Metric label="saves" value={m.preview.bookmarks} />
         <span className="num">
           <span className="font-semibold text-ink">{fmt(m.engagements)}</span> engagement
         </span>
@@ -158,14 +161,14 @@ export function MentionCard({ m }: { m: Mention }) {
         {m.brands.map((b) => (
           <span
             key={b.id}
-            className={`rounded-full px-2 py-0.5 font-semibold ${b.isOwn ? "bg-ruby-soft text-ruby" : "bg-surface text-ink"}`}
+            className={b.isOwn ? "mark font-semibold" : "rounded bg-surface px-1.5 py-0.5"}
           >
             {b.name}
           </span>
         ))}
         {m.url && (
           <a href={m.url} target="_blank" rel="noreferrer noopener" className="ml-auto font-semibold text-ink hover:underline">
-            Buka postingan asli
+            Open original post
           </a>
         )}
       </footer>

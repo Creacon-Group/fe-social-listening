@@ -15,9 +15,9 @@ export async function POST(request: Request) {
       request,
       onBeforeGenerateToken: async () => {
         const me = await fetch(`${API_URL}/api/auth/me`, { headers: { cookie: request.headers.get("cookie") ?? "" } });
-        if (!me.ok) throw new Error("Silakan masuk terlebih dahulu");
+        if (!me.ok) throw new Error("Sign in first");
         const user = (await me.json()) as { role: string };
-        if (user.role === "VIEWER") throw new Error("Akun viewer tidak bisa mengunggah data");
+        if (user.role === "VIEWER") throw new Error("Viewer accounts can't upload data");
         return {
           allowedContentTypes: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
           maximumSizeInBytes: 200 * 1024 * 1024,

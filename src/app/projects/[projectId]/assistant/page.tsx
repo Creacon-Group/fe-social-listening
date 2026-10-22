@@ -15,28 +15,28 @@ import { useProjectId } from "@/lib/project";
 import type { ChatSession, StoredChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = [
-  "Bandingkan share of voice Indosat dan Tri dengan kompetitor",
-  "Apa isu negatif yang paling banyak dibicarakan?",
-  "Tampilkan 5 mention Tri dengan engagement tertinggi",
+  "Compare share of voice for Indosat and Tri against competitors",
+  "What negative issues come up most?",
+  "Show the 5 Tri mentions with the most engagement",
 ];
 
 const TOOL_LABEL: Record<string, string> = {
-  get_overview: "Mengambil ringkasan",
-  compare_brands: "Membandingkan brand",
-  top_mentions: "Mencari mention teratas",
+  get_overview: "Reading the summary",
+  compare_brands: "Comparing brands",
+  top_mentions: "Finding top mentions",
 };
 
 function describeFilter(f: Filters) {
   const range =
     f.range === "custom" && f.from && f.to
-      ? `${f.from} s.d. ${f.to}`
+      ? `${f.from} to ${f.to}`
       : f.range === "today"
-        ? "hari terakhir"
+        ? "latest day"
         : f.range === "30d"
-          ? "30 hari"
-          : "7 hari";
-  const ch = f.channels.length ? f.channels.map((c) => CHANNEL_LABEL[c]).join(", ") : "semua channel";
-  const se = f.sentiments.length ? f.sentiments.map((s) => SENTIMENT_LABEL[s].toLowerCase()).join(", ") : "semua sentimen";
+          ? "last 30 days"
+          : "last 7 days";
+  const ch = f.channels.length ? f.channels.map((c) => CHANNEL_LABEL[c]).join(", ") : "all channels";
+  const se = f.sentiments.length ? f.sentiments.map((s) => SENTIMENT_LABEL[s].toLowerCase()).join(", ") : "all sentiment";
   return `${range}, ${ch}, ${se}`;
 }
 
@@ -114,18 +114,18 @@ function ChatPane({
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col rounded-3xl border border-line bg-card">
+    <div className="flex min-h-[60vh] flex-col rounded-[10px] border border-line bg-card">
       <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-6" aria-live="polite">
         {messages.length === 0 && (
           <div className="space-y-3">
-            <p className="text-sm text-muted">Tanyakan apa saja tentang data mention di project ini. Contoh:</p>
+            <p className="text-sm text-muted">Ask about the mentions in this project. For example:</p>
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => submit(s)}
                   disabled={outOfCredits}
-                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby disabled:opacity-40"
+                  className="rounded-[10px] border border-line px-3.5 py-2 text-left text-sm hover:border-ink disabled:opacity-40"
                 >
                   {s}
                 </button>
@@ -136,7 +136,7 @@ function ChatPane({
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
-              <p className="max-w-[80%] whitespace-pre-line rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-sm text-white">
+              <p className="max-w-[80%] whitespace-pre-line rounded-lg rounded-br-sm bg-ink px-4 py-2.5 text-sm text-white">
                 {m.parts.map((p) => (p.type === "text" ? p.text : "")).join("")}
               </p>
             </div>
@@ -162,14 +162,14 @@ function ChatPane({
             </div>
           ),
         )}
-        {status === "submitted" && <p className="text-xs text-muted">Menyiapkan jawaban…</p>}
+        {status === "submitted" && <p className="text-xs text-muted">Working on it…</p>}
         {error && !creditError && (
           <p role="alert" className="text-sm text-neg">
             {error.message.includes("503") || error.message.includes("dikonfigurasi")
-              ? "AI Assistant belum dikonfigurasi di server (GEMINI_API_KEY / GEMINI_MODEL)."
+              ? "The assistant isn't set up on the server yet (AI model settings)."
               : error.message.includes("sibuk")
-                ? "Model AI sedang sibuk di sisi Google. Tunggu sebentar, lalu kirim ulang pertanyaan."
-                : "Jawaban gagal dibuat. Coba kirim ulang pertanyaan."}
+                ? "The AI model is busy right now. Wait a moment, then send the question again."
+                : "No answer came back. Send the question again."}
           </p>
         )}
         <div ref={endRef} />
@@ -187,7 +187,7 @@ function ChatPane({
             <CreditsExhausted credits={credits} />
           </div>
         )}
-        <p className="mb-2 text-xs text-muted">Memakai filter aktif: {describeFilter(filters)}.</p>
+        <p className="mb-2 text-xs text-muted">Using the filters above: {describeFilter(filters)}.</p>
         <div className="flex items-end gap-2">
           <textarea
             value={input}
@@ -201,24 +201,24 @@ function ChatPane({
             rows={2}
             maxLength={2000}
             disabled={outOfCredits}
-            placeholder={outOfCredits ? "Kredit hari ini sudah habis" : "Tulis pertanyaan"}
-            aria-label="Pertanyaan untuk AI Assistant"
-            className="flex-1 resize-none rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ruby"
+            placeholder={outOfCredits ? "No credits left today" : "Ask a question"}
+            aria-label="Question for the brand assistant"
+            className="flex-1 resize-none rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ink"
           />
           {busy ? (
-            <button type="button" onClick={() => stop()} className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold">
-              Berhenti
+            <button type="button" onClick={() => stop()} className="rounded-md border border-line px-4 py-2.5 text-sm font-semibold">
+              Stop
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
-              Kirim
+            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-md bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
+              Send
             </button>
           )}
         </div>
         <p className="mt-2 text-xs text-muted">
           {credits && <span className="font-semibold text-ink">{creditLine(credits)} </span>}
-          Satu pertanyaan yang terjawab memakai satu kredit. Jawaban dibuat AI dari data yang sudah diunggah; periksa angka
-          penting di halaman Kompetitor sebelum dipakai.
+          Each answered question uses one credit. Answers are written by AI from the uploaded data, so check key numbers on
+          the Competitors page before you use them.
         </p>
       </form>
     </div>
@@ -256,11 +256,11 @@ export default function AssistantPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="AI Assistant" detail="Jawaban berdasarkan data social listening project ini" />
-      <div className="grid gap-5 lg:grid-cols-[16rem_1fr]">
+      <PageHeader title="Brand assistant" detail="Answers come from this project&apos;s social listening data" />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[16rem_1fr]">
         <aside className="space-y-2">
-          <button onClick={newChat} className="w-full rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white">
-            Chat baru
+          <button onClick={newChat} className="w-full rounded-md bg-ink px-4 py-2.5 text-sm font-semibold text-white">
+            New chat
           </button>
           <ul className="space-y-1">
             {(sessions ?? []).map((s) => (
@@ -271,19 +271,19 @@ export default function AssistantPage() {
                     setActiveId(s.id);
                   }}
                   aria-current={activeId === s.id ? "true" : undefined}
-                  className={`min-w-0 flex-1 rounded-xl px-3 py-2 text-left text-sm ${
+                  className={`min-w-0 flex-1 rounded-md px-3 py-2 text-left text-sm ${
                     activeId === s.id ? "bg-card font-semibold" : "text-muted hover:bg-card"
                   }`}
                 >
-                  <span className="block truncate">{s.title ?? "Chat tanpa judul"}</span>
+                  <span className="block truncate">{s.title ?? "Untitled chat"}</span>
                   <span className="block text-xs font-normal text-muted">{fmtDateTime(s.updatedAt)}</span>
                 </button>
                 <button
                   onClick={() => remove(s.id)}
-                  aria-label={`Hapus ${s.title ?? "chat"}`}
+                  aria-label={`Delete ${s.title ?? "chat"}`}
                   className="rounded-lg px-2 py-1 text-xs text-muted opacity-0 hover:text-neg focus:opacity-100 group-hover:opacity-100"
                 >
-                  Hapus
+                  Delete
                 </button>
               </li>
             ))}
@@ -291,9 +291,9 @@ export default function AssistantPage() {
         </aside>
 
         {!activeId ? (
-          <div className="space-y-4 rounded-3xl border border-line bg-card p-6">
+          <div className="space-y-4 rounded-[10px] border border-line bg-card p-6">
             {outOfCredits && credits && <CreditsExhausted credits={credits} />}
-            <p className="text-sm text-muted">Mulai chat baru, atau pilih chat sebelumnya.</p>
+            <p className="text-sm text-muted">Start a new chat or pick an earlier one.</p>
             {credits && <p className="text-xs text-muted">{creditLine(credits)}</p>}
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
@@ -305,7 +305,7 @@ export default function AssistantPage() {
                     setActiveId(created.id);
                   }}
                   disabled={outOfCredits}
-                  className="rounded-2xl border border-line px-3.5 py-2 text-left text-sm hover:border-ruby disabled:opacity-40"
+                  className="rounded-[10px] border border-line px-3.5 py-2 text-left text-sm hover:border-ink disabled:opacity-40"
                 >
                   {s}
                 </button>
@@ -313,7 +313,7 @@ export default function AssistantPage() {
             </div>
           </div>
         ) : historyError ? (
-          <Notice tone="error">Riwayat chat gagal dimuat.</Notice>
+          <Notice tone="error">Couldn&apos;t load this chat.</Notice>
         ) : isNew || history ? (
           <ChatPane
             key={activeId}
@@ -324,7 +324,7 @@ export default function AssistantPage() {
             onSent={() => void refreshSessions()}
           />
         ) : (
-          <p className="text-sm text-muted">Memuat riwayat…</p>
+          <p className="text-sm text-muted">Loading chat…</p>
         )}
       </div>
     </div>

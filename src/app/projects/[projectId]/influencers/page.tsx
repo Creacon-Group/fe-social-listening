@@ -10,9 +10,9 @@ import { useProjectId } from "@/lib/project";
 import type { Influencers } from "@/lib/types";
 
 const SORTS = [
-  ["reach", "Reach tertinggi"],
-  ["engagements", "Engagement tertinggi"],
-  ["mentions", "Mention terbanyak"],
+  ["reach", "Most reach"],
+  ["engagements", "Most engagement"],
+  ["mentions", "Most mentions"],
 ] as const;
 
 const th = "px-3 py-2 text-left text-xs font-semibold text-muted";
@@ -30,23 +30,23 @@ export default function InfluencersPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Influencer & Sumber" detail={data ? fmtPeriod(data.period) : undefined} />
+      <PageHeader title="Influencers & sources" detail={data ? fmtPeriod(data.period) : undefined} />
       {error ? (
-        <Notice tone="error">Data gagal dimuat: {error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load influencers: {error.message}</Notice>
       ) : !data ? (
         <Skeleton className="h-96" />
       ) : data.authors.length === 0 ? (
-        <Notice>Tidak ada mention pada filter ini.</Notice>
+        <Notice>No mentions match these filters.</Notice>
       ) : (
         <>
           <Panel
-            title="Influencer teratas"
+            title="Top influencers"
             aside={
               <select
-                aria-label="Urutkan influencer"
+                aria-label="Sort influencers"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as typeof sort)}
-                className="rounded-xl border border-line bg-card px-3 py-1.5 text-sm text-ink"
+                className="rounded-md border border-line bg-card px-3 py-1.5 text-sm text-ink"
               >
                 {SORTS.map(([v, l]) => (
                   <option key={v} value={v}>
@@ -61,12 +61,12 @@ export default function InfluencersPage() {
                 <thead>
                   <tr className="border-b border-line">
                     <th className={th}>#</th>
-                    <th className={th}>Akun</th>
-                    <th className={`${th} text-right`}>Pengikut</th>
+                    <th className={th}>Account</th>
+                    <th className={`${th} text-right`}>Followers</th>
                     <th className={`${th} text-right`}>Mentions</th>
                     <th className={`${th} text-right`}>Reach</th>
                     <th className={`${th} text-right`}>Engagement</th>
-                    <th className={`${th} w-40`}>Sentimen</th>
+                    <th className={`${th} w-40`}>Sentiment</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -84,8 +84,8 @@ export default function InfluencersPage() {
                             <span className="font-semibold">{a.name ?? `@${handle}`}</span>
                           )}
                           <span className="block text-xs text-muted">
-                            @{handle} · {CHANNEL_LABEL[a.channel]}
-                            {a.verified ? " · Terverifikasi" : ""}
+                            @{handle} on {CHANNEL_LABEL[a.channel]}
+                            {a.verified ? " (verified)" : ""}
                           </span>
                         </td>
                         <td className={`${td} num text-right`}>{a.followers ? fmtCompact(a.followers) : "–"}</td>
@@ -104,17 +104,17 @@ export default function InfluencersPage() {
             </div>
           </Panel>
 
-          <Panel title="Sumber teratas" aside={<SentimentLegend />}>
-            <p className="mb-3 text-sm text-muted">Situs berita dan platform, dihitung dari link setiap mention.</p>
+          <Panel title="Top sources" aside={<SentimentLegend />}>
+            <p className="mb-3 text-sm text-muted">News sites and platforms, from the link on each mention.</p>
             <div className="-mx-3 overflow-x-auto">
               <table className="w-full min-w-[36rem] text-sm">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className={th}>Situs / platform</th>
+                    <th className={th}>Site or platform</th>
                     <th className={`${th} text-right`}>Mentions</th>
                     <th className={`${th} text-right`}>Reach</th>
                     <th className={`${th} text-right`}>Engagement</th>
-                    <th className={`${th} w-40`}>Sentimen</th>
+                    <th className={`${th} w-40`}>Sentiment</th>
                   </tr>
                 </thead>
                 <tbody>

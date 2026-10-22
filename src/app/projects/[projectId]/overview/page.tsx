@@ -5,22 +5,12 @@ import useSWR from "swr";
 import { ReportActions } from "@/components/report-actions";
 import { SovRibbon } from "@/components/sov-ribbon";
 import { TrendCharts } from "@/components/trend-charts";
-import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
+import { KpiBand, Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
 import { useBrands, useProjectId } from "@/lib/project";
 import type { Competitors, Overview, Trend } from "@/lib/types";
-
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-3xl border border-line bg-card p-4 sm:p-5">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="num mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{value}</p>
-      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
-    </div>
-  );
-}
 
 export default function OverviewPage() {
   const projectId = useProjectId();
@@ -37,20 +27,15 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Ringkasan" detail={o ? fmtPeriod(o.period) : undefined} />
-      <ReportActions projectId={projectId} compact />
+      <PageHeader title="Summary" detail={o ? fmtPeriod(o.period) : undefined} actions={<ReportActions projectId={projectId} compact />} />
 
       {overview.error ? (
-        <Notice tone="error">Data ringkasan gagal dimuat: {overview.error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load the summary: {overview.error.message}</Notice>
       ) : !o ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+        <Skeleton className="h-36" />
       ) : o.total === 0 ? (
         <Notice>
-          Tidak ada mention pada filter ini. Ubah rentang tanggal atau{" "}
+          No mentions match these filters. Widen the period or{" "}
           <Link className="font-semibold text-ink underline" href={`/projects/${projectId}/upload`}>
             upload data
           </Link>
@@ -58,47 +43,62 @@ export default function OverviewPage() {
         </Notice>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-            <Stat label="Total mention" value={fmt(o.total)} />
-            <Stat label="Net sentiment" value={fmtSigned(o.netSentiment)} hint="(positif − negatif) ÷ total × 100" />
-            <Stat label="Engagement" value={fmtCompact(o.engagements)} />
-            <Stat label="Estimasi reach" value={fmtCompact(o.reach)} />
-          </div>
+          <KpiBand
+            items={[
+              { label: "Mentions", value: fmt(o.total) },
+              { label: "Net sentiment", value: fmtSigned(o.netSentiment), hint: "(positive − negative) ÷ total × 100" },
+              { label: "Engagement", value: fmtCompact(o.engagements) },
+              { label: "Estimated reach", value: fmtCompact(o.reach) },
+            ]}
+          />
 
-          <Panel title="Tren harian">
-            {trend.data ? <TrendCharts days={trend.data.days} /> : <Skeleton className="h-56" />}
-          </Panel>
+          {c && c.brands.length > 0 && (
+            <Panel
+              title="Share of voice"
+              aside={
+                <Link className="font-semibold text-ink underline underline-offset-2" href={`/projects/${projectId}/competitors?${q}`}>
+                  Compare brands
+                </Link>
+              }
+            >
+              <p className="text-sm text-muted">
+                <span className="mark font-semibold text-ink">{ownNames.join(" + ")}</span> hold{" "}
+                <span className="num font-bold text-ink">{fmtPct(c.own.sov)}</span> of brand mentions ({fmt(c.own.total)} unique
+                mentions).
+              </p>
+              <SovRibbon competitors={c} brandColors={brands} />
+            </Panel>
+          )}
 
-          <div className="grid gap-5 xl:grid-cols-5">
-            <Panel title="Sentimen" aside={<SentimentLegend />} className="xl:col-span-2">
-              <SentimentBar counts={o} height="h-4" />
+          <Panel title="Daily trend">{trend.data ? <TrendCharts days={trend.data.days} /> : <Skeleton className="h-56" />}</Panel>
+
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+            <Panel title="Sentiment" aside={<SentimentLegend />} className="xl:col-span-2">
+              <SentimentBar counts={o} height="h-3" />
               <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
                 {(
                   [
-                    ["Positif", o.positive, "text-pos"],
-                    ["Netral", o.neutral, "text-muted"],
-                    ["Negatif", o.negative, "text-neg"],
+                    ["Positive", o.positive, "text-pos"],
+                    ["Neutral", o.neutral, "text-muted"],
+                    ["Negative", o.negative, "text-neg"],
                   ] as const
                 ).map(([label, v, tone]) => (
                   <div key={label}>
                     <dt className="text-muted">{label}</dt>
-                    <dd className={`num mt-0.5 text-lg font-bold ${tone}`}>{fmt(v)}</dd>
+                    <dd className={`wide num mt-0.5 text-xl font-bold ${tone}`}>{fmt(v)}</dd>
                     <dd className="num text-xs text-muted">{fmtPct((v / o.total) * 100)}</dd>
                   </div>
                 ))}
               </dl>
             </Panel>
 
-            <Panel title="Volume per channel" className="xl:col-span-3">
+            <Panel title="Mentions by channel" className="xl:col-span-3">
               <ul className="space-y-3">
                 {o.channels.map((ch) => (
                   <li key={ch.channel} className="grid grid-cols-[6.5rem_1fr_4.5rem] items-center gap-3 text-sm">
                     <span className="font-medium">{CHANNEL_LABEL[ch.channel]}</span>
                     <span className="block">
-                      <span
-                        className="block"
-                        style={{ width: `${Math.max((ch.total / o.channels[0].total) * 100, 2)}%` }}
-                      >
+                      <span className="block" style={{ width: `${Math.max((ch.total / o.channels[0].total) * 100, 2)}%` }}>
                         <SentimentBar counts={ch} />
                       </span>
                     </span>
@@ -108,23 +108,6 @@ export default function OverviewPage() {
               </ul>
             </Panel>
           </div>
-
-          {c && c.brands.length > 0 && (
-            <Panel
-              title="Share of voice"
-              aside={
-                <Link className="font-semibold text-ink hover:underline" href={`/projects/${projectId}/competitors?${q}`}>
-                  Lihat perbandingan lengkap
-                </Link>
-              }
-            >
-              <p className="text-sm text-muted">
-                {ownNames.join(" + ")}: <span className="num font-bold text-ink">{fmtPct(c.own.sov)}</span> dari mention
-                yang menyebut brand ({fmt(c.own.total)} mention unik).
-              </p>
-              <SovRibbon competitors={c} brandColors={brands} />
-            </Panel>
-          )}
         </>
       )}
     </div>

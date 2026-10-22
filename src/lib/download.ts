@@ -2,7 +2,7 @@
 export async function downloadFile(url: string, fallbackName: string) {
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
-    let message = `Gagal membuat file (HTTP ${res.status})`;
+    let message = `Couldn't build the file (HTTP ${res.status})`;
     try {
       const body = await res.json();
       message = Array.isArray(body.message) ? body.message.join(", ") : (body.message ?? message);

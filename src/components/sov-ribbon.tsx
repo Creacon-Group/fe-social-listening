@@ -4,7 +4,7 @@ import { fmtPct } from "@/lib/format";
 import { brandColor } from "@/lib/project";
 import type { Competitors } from "@/lib/types";
 
-/** One 100% bar split by brand. Own brands carry their saturated colors; competitors stay muted. */
+/** One 100% bar split by brand; own brands are marked in the legend. */
 export function SovRibbon({
   competitors,
   brandColors,
@@ -15,7 +15,7 @@ export function SovRibbon({
   const colorOf = (id: number, i: number) => brandColor(brandColors?.find((b) => b.id === id) ?? {}, i);
   return (
     <div className="mt-4">
-      <div className="flex h-12 w-full overflow-hidden rounded-2xl" role="img" aria-label="Share of voice per brand">
+      <div className="flex h-12 w-full overflow-hidden rounded-md" role="img" aria-label="Share of voice per brand">
         {competitors.brands.map((b, i) => (
           <div
             key={b.brandId}
@@ -30,8 +30,8 @@ export function SovRibbon({
       <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
         {competitors.brands.map((b, i) => (
           <li key={b.brandId} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: colorOf(b.brandId, i) }} />
-            <span className={b.isOwn ? "font-semibold" : "text-muted"}>{b.name}</span>
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: colorOf(b.brandId, i) }} />
+            {b.isOwn ? <span className="mark font-semibold">{b.name}</span> : <span className="text-muted">{b.name}</span>}
             <span className="num">{fmtPct(b.sov)}</span>
           </li>
         ))}

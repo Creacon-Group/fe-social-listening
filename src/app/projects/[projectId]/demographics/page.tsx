@@ -8,7 +8,7 @@ import { fmt, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
 import { useProjectId } from "@/lib/project";
 import type { Demographics } from "@/lib/types";
 
-const COUNTRY = new Intl.DisplayNames(["id"], { type: "region" });
+const COUNTRY = new Intl.DisplayNames(["en"], { type: "region" });
 const countryName = (code: string) => {
   try {
     return COUNTRY.of(code) ?? code;
@@ -46,48 +46,47 @@ export default function DemographicsPage() {
     fetcher,
     { keepPreviousData: true },
   );
-  const unknownGender = data?.gender.find((g) => g.label === "Tidak diketahui")?.total ?? 0;
+  const unknownGender = data?.gender.find((g) => g.label === "Unknown")?.total ?? 0;
   const countriesTotal = data?.countries.reduce((s, c) => s + c.total, 0) ?? 0;
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Demografi" detail={data ? fmtPeriod(data.period) : undefined} />
+      <PageHeader title="Demographics" detail={data ? fmtPeriod(data.period) : undefined} />
       <Notice>
-        Ditampilkan sesuai data yang ada di export Zanroo: gender, provinsi, dan negara penulis. Usia tidak tersedia di
-        export.
+        Shows what the Zanroo export holds about authors: gender, province and country. The export has no age data.
       </Notice>
       {error ? (
-        <Notice tone="error">Data gagal dimuat: {error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load demographics: {error.message}</Notice>
       ) : !data ? (
         <Skeleton className="h-96" />
       ) : data.total === 0 ? (
-        <Notice>Tidak ada mention pada filter ini.</Notice>
+        <Notice>No mentions match these filters.</Notice>
       ) : (
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <Panel title="Gender" aside={<SentimentLegend />}>
             <Bars rows={data.gender.map((g) => ({ key: g.label, ...g }))} total={data.total} />
             {unknownGender / data.total > 0.9 && (
               <p className="mt-4 text-xs text-muted">
-                {fmtPct((unknownGender / data.total) * 100)} mention tidak punya data gender di export, jadi pembagian gender
-                belum bisa dipakai untuk kesimpulan.
+                {fmtPct((unknownGender / data.total) * 100)} of mentions have no gender in the export, so this split can&apos;t
+                support conclusions yet.
               </p>
             )}
           </Panel>
 
-          <Panel title="Negara" aside={`${fmt(countriesTotal)} mention berlokasi negara`}>
+          <Panel title="Country" aside={`${fmt(countriesTotal)} mentions with a country`}>
             {data.countries.length ? (
               <Bars
                 rows={data.countries.slice(0, 10).map((c) => ({ key: c.code, label: countryName(c.code), ...c }))}
                 total={countriesTotal}
               />
             ) : (
-              <p className="text-sm text-muted">Tidak ada data negara.</p>
+              <p className="text-sm text-muted">No country data.</p>
             )}
           </Panel>
 
           <Panel
-            title="Provinsi"
-            aside={`${fmt(data.located)} dari ${fmt(data.total)} mention punya lokasi (${fmtPct((data.located / data.total) * 100)})`}
+            title="Province"
+            aside={`${fmt(data.located)} of ${fmt(data.total)} mentions have a location (${fmtPct((data.located / data.total) * 100)})`}
             className="xl:col-span-2"
           >
             {data.provinces.length ? (
@@ -97,7 +96,7 @@ export default function DemographicsPage() {
                   total={data.located}
                 />
                 <p className="mt-4 text-xs text-muted">
-                  Persentase dihitung dari mention yang punya lokasi. Net sentiment provinsi teratas:{" "}
+                  Shares are of mentions with a location. Net sentiment in the top provinces:{" "}
                   {data.provinces
                     .slice(0, 3)
                     .map((p) => `${p.name} ${fmtSigned(p.netSentiment)}`)
@@ -107,7 +106,7 @@ export default function DemographicsPage() {
               </>
             ) : (
               <p className="text-sm text-muted">
-                Belum ada data provinsi. Upload ulang file Excel agar lokasi mention lama ikut terisi.
+                No province data yet. Upload the Excel file again to fill in locations for existing mentions.
               </p>
             )}
           </Panel>

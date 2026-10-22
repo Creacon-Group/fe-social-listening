@@ -11,18 +11,28 @@ const SENTIMENTS: Sentiment[] = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
 const shift = (ymd: string, days: number) =>
   new Date(new Date(`${ymd}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10);
 
-function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+/** One segment of a joined control group. Square-ish corners: these are tools, not tags. */
+function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+      className={`min-h-9 whitespace-nowrap px-3 text-[0.8125rem] font-semibold ${
         active ? "bg-ink text-white" : "text-muted hover:bg-surface hover:text-ink"
       }`}
     >
       {children}
     </button>
+  );
+}
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+      <span className="text-xs text-muted">{label}</span>
+      <div className="flex flex-wrap divide-x divide-line overflow-hidden rounded-md border border-line bg-card">{children}</div>
+    </div>
   );
 }
 
@@ -42,18 +52,18 @@ export function FilterBar({ projectId }: { projectId: number }) {
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-line bg-card px-2 py-2">
-      <div role="group" aria-label="Rentang waktu" className="flex flex-wrap items-center gap-0.5">
-        <Pill active={filters.range === "today"} onClick={() => setFilters({ range: "today" })}>
-          {presetLabel("today", "Hari terakhir")}
-        </Pill>
-        <Pill active={filters.range === "7d"} onClick={() => setFilters({ range: "7d" })}>
-          {presetLabel("7d", "7 hari")}
-        </Pill>
-        <Pill active={filters.range === "30d"} onClick={() => setFilters({ range: "30d" })}>
-          {presetLabel("30d", "30 hari")}
-        </Pill>
-        <Pill
+    <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+      <Group label="Period">
+        <Seg active={filters.range === "today"} onClick={() => setFilters({ range: "today" })}>
+          {presetLabel("today", "Latest day")}
+        </Seg>
+        <Seg active={filters.range === "7d"} onClick={() => setFilters({ range: "7d" })}>
+          {presetLabel("7d", "7 days")}
+        </Seg>
+        <Seg active={filters.range === "30d"} onClick={() => setFilters({ range: "30d" })}>
+          {presetLabel("30d", "30 days")}
+        </Seg>
+        <Seg
           active={filters.range === "custom"}
           onClick={() =>
             setFilters({
@@ -63,60 +73,52 @@ export function FilterBar({ projectId }: { projectId: number }) {
             })
           }
         >
-          Pilih tanggal
-        </Pill>
-        {filters.range === "custom" && (
-          <span className="flex items-center gap-1 pl-1 text-xs">
-            <input
-              type="date"
-              aria-label="Dari tanggal"
-              value={filters.from ?? ""}
-              max={filters.to}
-              onChange={(e) => setFilters({ from: e.target.value })}
-              className="rounded-lg border border-line px-2 py-1"
-            />
-            <span className="text-muted">s.d.</span>
-            <input
-              type="date"
-              aria-label="Sampai tanggal"
-              value={filters.to ?? ""}
-              min={filters.from}
-              onChange={(e) => setFilters({ to: e.target.value })}
-              className="rounded-lg border border-line px-2 py-1"
-            />
-          </span>
-        )}
-      </div>
+          Custom
+        </Seg>
+      </Group>
+      {filters.range === "custom" && (
+        <span className="flex items-center gap-1.5 text-xs">
+          <input
+            type="date"
+            aria-label="From date"
+            value={filters.from ?? ""}
+            max={filters.to}
+            onChange={(e) => setFilters({ from: e.target.value })}
+            className="min-h-9 rounded-md border border-line bg-card px-2"
+          />
+          <span className="text-muted">to</span>
+          <input
+            type="date"
+            aria-label="To date"
+            value={filters.to ?? ""}
+            min={filters.from}
+            onChange={(e) => setFilters({ to: e.target.value })}
+            className="min-h-9 rounded-md border border-line bg-card px-2"
+          />
+        </span>
+      )}
 
-      <span className="hidden h-5 w-px bg-line lg:block" aria-hidden />
-
-      <div role="group" aria-label="Channel" className="flex flex-wrap items-center gap-0.5">
-        <Pill active={!filters.channels.length} onClick={() => setFilters({ channels: [] })}>
-          Semua channel
-        </Pill>
+      <Group label="Channel">
+        <Seg active={!filters.channels.length} onClick={() => setFilters({ channels: [] })}>
+          All
+        </Seg>
         {CHANNELS.map((c) => (
-          <Pill key={c} active={filters.channels.includes(c)} onClick={() => setFilters({ channels: toggle(filters.channels, c) })}>
+          <Seg key={c} active={filters.channels.includes(c)} onClick={() => setFilters({ channels: toggle(filters.channels, c) })}>
             {CHANNEL_LABEL[c]}
-          </Pill>
+          </Seg>
         ))}
-      </div>
+      </Group>
 
-      <span className="hidden h-5 w-px bg-line lg:block" aria-hidden />
-
-      <div role="group" aria-label="Sentimen" className="flex flex-wrap items-center gap-0.5">
-        <Pill active={!filters.sentiments.length} onClick={() => setFilters({ sentiments: [] })}>
-          Semua sentimen
-        </Pill>
+      <Group label="Sentiment">
+        <Seg active={!filters.sentiments.length} onClick={() => setFilters({ sentiments: [] })}>
+          All
+        </Seg>
         {SENTIMENTS.map((s) => (
-          <Pill
-            key={s}
-            active={filters.sentiments.includes(s)}
-            onClick={() => setFilters({ sentiments: toggle(filters.sentiments, s) })}
-          >
+          <Seg key={s} active={filters.sentiments.includes(s)} onClick={() => setFilters({ sentiments: toggle(filters.sentiments, s) })}>
             {SENTIMENT_LABEL[s]}
-          </Pill>
+          </Seg>
         ))}
-      </div>
+      </Group>
     </div>
   );
 }

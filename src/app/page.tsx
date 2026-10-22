@@ -17,10 +17,10 @@ export default function Home() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 text-sm text-muted">
       {error
-        ? "Gagal memuat project. Muat ulang halaman."
+        ? "Couldn't load your projects. Reload the page."
         : data && !data.length
-          ? "Akun Anda belum ditambahkan ke project mana pun. Hubungi admin."
-          : "Memuat…"}
+          ? "Your account isn't in any project yet. Ask your admin to add you."
+          : "Loading…"}
     </main>
   );
 }

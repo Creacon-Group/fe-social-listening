@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
+import { btnPrimary, btnQuiet } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
 import { filterBody, filterQuery, useFilters } from "@/lib/filters";
@@ -33,7 +34,7 @@ export function ReportActions({ projectId, compact = false }: { projectId: numbe
         );
         setMsg({
           tone: "ok",
-          text: `Email terkirim ke ${r.sentTo.join(", ")}${r.withAnalysis ? "" : " (tanpa analisis AI)"}.`,
+          text: `Summary sent to ${r.sentTo.join(", ")}${r.withAnalysis ? "" : " (without the AI analysis)"}.`,
         });
       } else {
         await downloadFile(
@@ -48,40 +49,39 @@ export function ReportActions({ projectId, compact = false }: { projectId: numbe
     }
   }
 
-  const btn = "rounded-xl border border-line bg-card px-3.5 py-2 text-sm font-semibold hover:border-ink disabled:opacity-40";
   const recipients = settings?.recipients ?? [];
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => run("pdf")} disabled={busy !== null} className={btn}>
-          {busy === "pdf" ? "Menyiapkan PDF…" : "Export PDF"}
+        <button onClick={() => run("pdf")} disabled={busy !== null} className={btnQuiet}>
+          {busy === "pdf" ? "Building PDF…" : "Export PDF"}
         </button>
-        <button onClick={() => run("excel")} disabled={busy !== null} className={btn}>
-          {busy === "excel" ? "Menyiapkan Excel…" : "Export Excel"}
+        <button onClick={() => run("excel")} disabled={busy !== null} className={btnQuiet}>
+          {busy === "excel" ? "Building Excel…" : "Export Excel"}
         </button>
         {canSend && (
           <button
             onClick={() => run("email")}
             disabled={busy !== null || !recipients.length || settings?.emailConfigured === false}
-            className="rounded-xl bg-ink px-3.5 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            title={recipients.length ? `Kirim ke ${recipients.join(", ")}` : "Isi penerima di halaman Laporan"}
+            className={btnPrimary}
+            title={recipients.length ? `Send to ${recipients.join(", ")}` : "Add recipients on the Export & email page"}
           >
-            {busy === "email" ? "Mengirim email…" : "Kirim email summary"}
+            {busy === "email" ? "Sending…" : "Email summary"}
           </button>
         )}
       </div>
       {busy === "pdf" || busy === "email" ? (
-        <p className="text-xs text-muted">Membuat grafik dan analisis AI, biasanya 20–60 detik.</p>
+        <p className="text-xs text-muted">Drawing charts and writing the analysis. This usually takes 20 to 60 seconds.</p>
       ) : null}
       {!compact && canSend && settings && !recipients.length && (
-        <p className="text-xs text-muted">Belum ada penerima email. Isi di pengaturan di bawah.</p>
+        <p className="text-xs text-muted">No recipients yet. Add them in the settings below.</p>
       )}
       {compact && canSend && settings && (!recipients.length || !settings.emailConfigured) && (
         <p className="text-xs text-muted">
-          {settings.emailConfigured ? "Belum ada penerima email." : "Email belum dikonfigurasi di server."}{" "}
+          {settings.emailConfigured ? "No email recipients yet." : "Email isn't set up on the server yet."}{" "}
           <Link href={`/projects/${projectId}/reports`} className="font-semibold text-ink underline">
-            Atur di halaman Laporan
+            Set up email
           </Link>
         </p>
       )}

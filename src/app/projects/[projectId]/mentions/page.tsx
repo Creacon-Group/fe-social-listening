@@ -46,7 +46,7 @@ export default function MentionsPage() {
     <div className="space-y-5">
       <PageHeader
         title="Mentions"
-        detail={data ? `${fmt(data.total)} mention, ${fmtPeriod(data.period)}` : undefined}
+        detail={data ? `${fmt(data.total)} mentions, ${fmtPeriod(data.period)}` : undefined}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -54,17 +54,17 @@ export default function MentionsPage() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari kata di isi mention"
-          aria-label="Cari kata di isi mention"
-          className="min-w-56 flex-1 rounded-xl border border-line bg-card px-3.5 py-2 text-sm"
+          placeholder="Search mention text"
+          aria-label="Search mention text"
+          className="min-h-10 min-w-56 flex-1 rounded-md border border-line bg-card px-3 text-sm outline-none focus:border-ink"
         />
         <select
           aria-label="Brand"
           value={brandId}
           onChange={(e) => setBrandId(e.target.value)}
-          className="rounded-xl border border-line bg-card px-3 py-2 text-sm"
+          className="min-h-10 rounded-md border border-line bg-card px-2.5 text-sm"
         >
-          <option value="">Semua brand</option>
+          <option value="">All brands</option>
           {(brands ?? []).map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
@@ -72,19 +72,19 @@ export default function MentionsPage() {
           ))}
         </select>
         <select
-          aria-label="Urutkan"
+          aria-label="Sort"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="rounded-xl border border-line bg-card px-3 py-2 text-sm"
+          className="min-h-10 rounded-md border border-line bg-card px-2.5 text-sm"
         >
-          <option value="latest">Terbaru</option>
-          <option value="engagements">Engagement tertinggi</option>
-          <option value="reach">Reach tertinggi</option>
+          <option value="latest">Newest</option>
+          <option value="engagements">Most engagement</option>
+          <option value="reach">Most reach</option>
         </select>
       </div>
 
       {error ? (
-        <Notice tone="error">Mentions gagal dimuat: {error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load mentions: {error.message}</Notice>
       ) : !data && isLoading ? (
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
@@ -92,29 +92,29 @@ export default function MentionsPage() {
           ))}
         </div>
       ) : data && data.items.length === 0 ? (
-        <Notice>Tidak ada mention yang cocok. Coba longgarkan filter atau hapus kata pencarian.</Notice>
+        <Notice>No mentions match. Widen the filters or clear the search.</Notice>
       ) : (
         <>
           <div className={`space-y-3 ${isLoading ? "opacity-60" : ""}`}>
             {data?.items.map((m) => <MentionCard key={m.id} m={m} />)}
           </div>
-          <nav aria-label="Halaman" className="flex items-center justify-between text-sm">
+          <nav aria-label="Pages" className="flex items-center justify-between text-sm">
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-xl border border-line bg-card px-4 py-2 font-semibold disabled:opacity-40"
+              className="min-h-10 rounded-md border border-line bg-card px-4 font-semibold hover:border-ink disabled:opacity-40"
             >
-              Sebelumnya
+              Previous
             </button>
             <span className="num text-muted">
-              Halaman {fmt(page)} dari {fmt(pages)}
+              Page {fmt(page)} of {fmt(pages)}
             </span>
             <button
               disabled={page >= pages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-xl border border-line bg-card px-4 py-2 font-semibold disabled:opacity-40"
+              className="min-h-10 rounded-md border border-line bg-card px-4 font-semibold hover:border-ink disabled:opacity-40"
             >
-              Berikutnya
+              Next
             </button>
           </nav>
         </>

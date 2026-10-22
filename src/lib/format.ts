@@ -1,17 +1,17 @@
 import type { Channel, Sentiment } from "./types";
 
-const nf = new Intl.NumberFormat("id-ID");
-const compact = new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 });
-const dec1 = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nf = new Intl.NumberFormat("en-GB");
+const compact = new Intl.NumberFormat("en-GB", { notation: "compact", maximumFractionDigits: 1 });
+const dec1 = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export const fmt = (n: number) => nf.format(n);
 export const fmtCompact = (n: number) => compact.format(n);
 export const fmtPct = (n: number) => `${dec1.format(n)}%`;
 export const fmtSigned = (n: number) => (n > 0 ? `+${dec1.format(n)}` : dec1.format(n));
 
-const monthShort = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", timeZone: "UTC" });
-const fullDate = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-const dateTime = new Intl.DateTimeFormat("id-ID", {
+const monthShort = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const fullDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const dateTime = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   hour: "2-digit",
@@ -23,7 +23,7 @@ const dateTime = new Intl.DateTimeFormat("id-ID", {
 export const fmtDay = (ymd: string) => monthShort.format(new Date(`${ymd}T00:00:00Z`));
 export const fmtDayLong = (ymd: string) => fullDate.format(new Date(`${ymd}T00:00:00Z`));
 export const fmtPeriod = (p: { from: string; to: string }) =>
-  p.from === p.to ? fmtDayLong(p.from) : `${fmtDay(p.from)} – ${fmtDayLong(p.to)}`;
+  p.from === p.to ? fmtDayLong(p.from) : `${fmtDay(p.from)} to ${fmtDayLong(p.to)}`;
 export const fmtDateTime = (iso: string) => `${dateTime.format(new Date(iso))} WIB`;
 
 export const CHANNEL_LABEL: Record<Channel, string> = {
@@ -37,9 +37,9 @@ export const CHANNEL_LABEL: Record<Channel, string> = {
 };
 
 export const SENTIMENT_LABEL: Record<Sentiment, string> = {
-  POSITIVE: "Positif",
-  NEUTRAL: "Netral",
-  NEGATIVE: "Negatif",
+  POSITIVE: "Positive",
+  NEUTRAL: "Neutral",
+  NEGATIVE: "Negative",
 };
 
 export const SENTIMENT_COLOR: Record<Sentiment, string> = {

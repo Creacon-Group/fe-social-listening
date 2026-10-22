@@ -31,23 +31,23 @@ export function ContactLink({ contact }: { contact: string }) {
 
 export function CreditsExhausted({ credits }: { credits: CreditStatus }) {
   return (
-    <div role="status" className="rounded-2xl border border-ruby/30 bg-ruby/5 px-4 py-3 text-sm">
-      <p className="font-semibold">Kredit AI Assistant hari ini sudah habis ({credits.used} dari {credits.limit} pertanyaan).</p>
+    <div role="status" className="rounded-[10px] border border-signal bg-signal-soft/50 px-4 py-3 text-sm">
+      <p className="font-semibold">You&apos;ve used today&apos;s assistant credits ({credits.used} of {credits.limit} questions).</p>
       <p className="mt-1 text-muted">
-        Hubungi Account Manager Anda
+        Contact your account manager
         {credits.contact ? (
           <>
             {" "}
             (<ContactLink contact={credits.contact} />)
           </>
         ) : null}{" "}
-        untuk menambah kredit. Kredit otomatis terisi lagi pukul 00.00 WIB.
+        to add credits. Credits refill at 00:00 WIB.
       </p>
     </div>
   );
 }
 
 export function creditLine(c: CreditStatus) {
-  if (c.unlimited) return "Kredit tanpa batas (superadmin).";
-  return `Sisa kredit hari ini: ${c.remaining} dari ${c.limit} pertanyaan. Terisi lagi pukul 00.00 WIB.`;
+  if (c.unlimited) return "Unlimited credits (superadmin).";
+  return `${c.remaining} of ${c.limit} questions left today. Refills at 00:00 WIB.`;
 }

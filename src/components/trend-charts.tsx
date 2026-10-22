@@ -26,16 +26,16 @@ function DayChart({ days, dataKey, color, label }: { days: TrendDay[]; dataKey: 
 
 /** Mentions and reach per day, as in the Summary and AI Insights pages. */
 export function TrendCharts({ days, stacked = false }: { days: TrendDay[]; stacked?: boolean }) {
-  if (days.length < 2) return <p className="text-sm text-muted">Pilih rentang lebih dari satu hari untuk melihat tren.</p>;
+  if (days.length < 2) return <p className="text-sm text-muted">Pick a period longer than one day to see the trend.</p>;
   return (
     <div className={`grid gap-5 ${stacked ? "" : "lg:grid-cols-2"}`}>
       <div>
-        <p className="mb-2 text-sm font-semibold">Mentions per hari</p>
-        <DayChart days={days} dataKey="total" color="var(--ruby)" label="Mentions" />
+        <p className="mb-2 text-sm font-semibold">Mentions per day</p>
+        <DayChart days={days} dataKey="total" color="var(--ink)" label="Mentions" />
       </div>
       <div>
-        <p className="mb-2 text-sm font-semibold">Reach per hari</p>
-        <DayChart days={days} dataKey="reach" color="var(--violet)" label="Reach" />
+        <p className="mb-2 text-sm font-semibold">Reach per day</p>
+        <DayChart days={days} dataKey="reach" color="var(--muted)" label="Reach" />
       </div>
     </div>
   );

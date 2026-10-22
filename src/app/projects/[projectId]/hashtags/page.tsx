@@ -10,7 +10,7 @@ import type { Hashtags } from "@/lib/types";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-line bg-card p-4 sm:p-5">
+    <div className="rounded-[10px] border border-line bg-card p-4 sm:p-5">
       <p className="text-sm text-muted">{label}</p>
       <p className="num mt-2 text-2xl font-bold tracking-tight">{value}</p>
     </div>
@@ -28,21 +28,21 @@ export default function HashtagsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Hashtag" detail={data ? fmtPeriod(data.period) : undefined} />
+      <PageHeader title="Hashtags" detail={data ? fmtPeriod(data.period) : undefined} />
       {error ? (
-        <Notice tone="error">Data gagal dimuat: {error.message}</Notice>
+        <Notice tone="error">Couldn&apos;t load hashtags: {error.message}</Notice>
       ) : !data ? (
         <Skeleton className="h-96" />
       ) : data.hashtags.length === 0 ? (
-        <Notice>Tidak ada hashtag pada filter ini.</Notice>
+        <Notice>No hashtags in mentions that match these filters.</Notice>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <Stat label="Mention dengan hashtag" value={fmt(data.mentionsWithHashtag)} />
-            <Stat label="Hashtag unik" value={fmt(data.uniqueHashtags)} />
+            <Stat label="Mentions with a hashtag" value={fmt(data.mentionsWithHashtag)} />
+            <Stat label="Unique hashtags" value={fmt(data.uniqueHashtags)} />
           </div>
 
-          <Panel title="15 hashtag teratas" aside={<SentimentLegend />}>
+          <Panel title="Top 15 hashtags" aside={<SentimentLegend />}>
             <ul className="space-y-3">
               {top.map((h) => (
                 <li key={h.tag} className="grid grid-cols-[minmax(7rem,12rem)_1fr_4rem] items-center gap-3 text-sm">
@@ -58,7 +58,7 @@ export default function HashtagsPage() {
             </ul>
           </Panel>
 
-          <Panel title="Detail hashtag" aside="Diambil dari teks mention">
+          <Panel title="Detail hashtag" aside="Taken from mention text">
             <div className="-mx-3 overflow-x-auto">
               <table className="w-full min-w-[40rem] text-sm">
                 <thead>
@@ -68,7 +68,7 @@ export default function HashtagsPage() {
                     <th className="px-3 py-2 text-right font-semibold">Engagement</th>
                     <th className="px-3 py-2 text-right font-semibold">Reach</th>
                     <th className="px-3 py-2 text-right font-semibold">Net sentiment</th>
-                    <th className="px-3 py-2 font-semibold">Channel terbanyak</th>
+                    <th className="px-3 py-2 font-semibold">Top channel</th>
                   </tr>
                 </thead>
                 <tbody>

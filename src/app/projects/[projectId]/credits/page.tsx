@@ -17,9 +17,9 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const field =
-  "rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-ruby disabled:opacity-50";
-const button = "rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-40";
-const ghost = "rounded-xl border border-line px-3 py-2 text-sm font-semibold hover:border-ink disabled:opacity-40";
+  "rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-50";
+const button = "rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-40";
+const ghost = "rounded-md border border-line px-3 py-2 text-sm font-semibold hover:border-ink disabled:opacity-40";
 
 function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
   const [limit, setLimit] = useState(String(user.dailyChatCredits));
@@ -51,26 +51,26 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
       <div className="min-w-0">
         <p className="truncate font-semibold">{user.name}</p>
         <p className="truncate text-xs text-muted">
-          {user.email} · {ROLE_LABEL[user.role]}
+          {user.email}, {ROLE_LABEL[user.role]}
         </p>
       </div>
 
       <div>
-        <p className="text-xs text-muted">Pemakaian hari ini</p>
+        <p className="text-xs text-muted">Used today</p>
         <p className="num text-sm font-semibold">
           {superadmin ? (
-            `${user.usedToday} · tanpa batas`
+            `${user.usedToday}, no limit`
           ) : (
             <>
-              {user.usedToday} dari {available}
-              {user.bonusToday > 0 && <span className="font-normal text-muted"> (termasuk +{user.bonusToday} hari ini)</span>}
+              {user.usedToday} of {available}
+              {user.bonusToday > 0 && <span className="font-normal text-muted"> (includes +{user.bonusToday} today)</span>}
             </>
           )}
         </p>
       </div>
 
       {superadmin ? (
-        <p className="text-sm text-muted lg:col-span-2">Superadmin tidak dibatasi kredit.</p>
+        <p className="text-sm text-muted lg:col-span-2">Superadmins have no credit limit.</p>
       ) : (
         <>
           <form
@@ -79,12 +79,12 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
               e.preventDefault();
               void run(
                 () => apiSend(`/api/admin/users/${user.id}/credits`, "PUT", { dailyChatCredits: limitNum }),
-                "Limit harian disimpan",
+                "Daily limit saved",
               );
             }}
           >
             <label className="flex-1">
-              <span className="mb-1 block text-xs text-muted">Limit harian (tetap)</span>
+              <span className="mb-1 block text-xs text-muted">Daily limit</span>
               <input
                 type="number"
                 min={0}
@@ -100,7 +100,7 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
               disabled={busy || !Number.isInteger(limitNum) || limitNum < 0 || limitNum === user.dailyChatCredits}
               className={ghost}
             >
-              Simpan
+              Save
             </button>
           </form>
 
@@ -110,12 +110,12 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
               e.preventDefault();
               void run(
                 () => apiSend(`/api/admin/users/${user.id}/credits/bonus`, "POST", { amount: bonusNum }),
-                `+${bonusNum} kredit untuk hari ini`,
+                `Added ${bonusNum} credits for today`,
               );
             }}
           >
             <label className="flex-1">
-              <span className="mb-1 block text-xs text-muted">Tambah untuk hari ini saja</span>
+              <span className="mb-1 block text-xs text-muted">Extra credits for today</span>
               <input
                 type="number"
                 min={1}
@@ -127,7 +127,7 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
               />
             </label>
             <button type="submit" disabled={busy || !Number.isInteger(bonusNum) || bonusNum < 1} className={button}>
-              Tambah
+              Add
             </button>
           </form>
         </>
@@ -169,14 +169,14 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
   if (!open)
     return (
       <button onClick={() => setOpen(true)} className={ghost}>
-        Tambah user
+        Add user
       </button>
     );
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <label>
-        <span className="mb-1 block text-xs text-muted">Nama</span>
+        <span className="mb-1 block text-xs text-muted">Name</span>
         <input required maxLength={120} value={form.name} onChange={set("name")} className={`${field} w-full`} />
       </label>
       <label>
@@ -184,15 +184,15 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
         <input required type="email" value={form.email} onChange={set("email")} className={`${field} w-full`} />
       </label>
       <label>
-        <span className="mb-1 block text-xs text-muted">Peran</span>
+        <span className="mb-1 block text-xs text-muted">Role</span>
         <select value={form.role} onChange={set("role")} className={`${field} w-full`}>
-          <option value="VIEWER">Viewer: hanya melihat</option>
-          <option value="ANALYST">Analyst: bisa upload data</option>
-          <option value="ADMIN">Admin: semua project</option>
+          <option value="VIEWER">Viewer: read only</option>
+          <option value="ANALYST">Analyst: can upload data</option>
+          <option value="ADMIN">Admin: all projects</option>
         </select>
       </label>
       <label>
-        <span className="mb-1 block text-xs text-muted">Password awal (min. 10 karakter)</span>
+        <span className="mb-1 block text-xs text-muted">First password (10+ characters)</span>
         <input
           required
           type="password"
@@ -204,7 +204,7 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
         />
       </label>
       <label>
-        <span className="mb-1 block text-xs text-muted">Kredit AI per hari</span>
+        <span className="mb-1 block text-xs text-muted">Assistant credits per day</span>
         <input
           required
           type="number"
@@ -217,10 +217,10 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
       </label>
       <div className="flex items-end gap-2">
         <button type="submit" disabled={busy} className={button}>
-          {busy ? "Menyimpan…" : "Buat user"}
+          {busy ? "Saving…" : "Create user"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className={ghost}>
-          Batal
+          Cancel
         </button>
       </div>
       {error && (
@@ -237,21 +237,21 @@ export default function CreditsPage() {
   const isSuper = me?.role === "SUPERADMIN";
   const { data: users, error, mutate } = useSWR<AdminUser[]>(isSuper ? KEY : null, fetcher);
 
-  if (me && !isSuper) return <Notice>Halaman ini hanya untuk superadmin.</Notice>;
+  if (me && !isSuper) return <Notice>This page is for superadmins.</Notice>;
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Kredit AI Assistant" detail="Satu kredit = satu pertanyaan terjawab. Reset setiap 00.00 WIB." />
+      <PageHeader title="Assistant credits" detail="One credit is one answered question. Credits reset at 00:00 WIB." />
 
-      <Panel title="User baru" aside="User baru otomatis masuk ke semua project.">
+      <Panel title="New user" aside="New users join every project.">
         <NewUserForm onCreated={() => void mutate()} />
       </Panel>
 
-      <Panel title="Kredit per user" aside="Limit harian berlaku setiap hari. Tambahan hari ini hangus pukul 00.00 WIB.">
+      <Panel title="Credits per user" aside="The daily limit applies every day. Extra credits expire at 00:00 WIB.">
         {error ? (
-          <Notice tone="error">Daftar user gagal dimuat.</Notice>
+          <Notice tone="error">Couldn&apos;t load users.</Notice>
         ) : !users ? (
-          <p className="text-sm text-muted">Memuat…</p>
+          <p className="text-sm text-muted">Loading…</p>
         ) : (
           <ul className="divide-y divide-line">
             {users.map((u) => (

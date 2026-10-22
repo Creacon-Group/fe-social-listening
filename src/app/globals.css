@@ -1,16 +1,20 @@
 @import "tailwindcss";
 
+/*
+ * Palette: one ink, one cool canvas, one accent. Signal yellow is Indosat's own brand colour, so
+ * the accent belongs to this client; it marks "us" (own brands, active place) and nothing else.
+ * Sentiment keeps its own teal / rust pair because it encodes data, not brand.
+ */
 :root {
-  --ink: #1c1a2b;
-  --muted: #6b6880;
-  --line: #e7e5ee;
-  --surface: #f6f5f9;
+  --ink: #17161c;
+  --muted: #5c5b66;
+  --line: #dcdcd6;
+  --surface: #f1f1ee;
   --card: #ffffff;
-  --ruby: #e11d48;
-  --ruby-soft: #fde8ee;
-  --violet: #7c3aed;
+  --signal: #ffc800;
+  --signal-soft: #fff1b8;
   --pos: #0f766e;
-  --neu: #cbd5e1;
+  --neu: #c9cdd3;
   --neg: #c2410c;
 }
 
@@ -20,13 +24,12 @@
   --color-line: var(--line);
   --color-surface: var(--surface);
   --color-card: var(--card);
-  --color-ruby: var(--ruby);
-  --color-ruby-soft: var(--ruby-soft);
-  --color-violet: var(--violet);
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
   --color-pos: var(--pos);
   --color-neu: var(--neu);
   --color-neg: var(--neg);
-  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -36,15 +39,30 @@ html {
 
 body {
   font-family: var(--font-sans);
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Archivo's width axis is the one loud typographic gesture: titles and big numbers run wide. */
+.wide {
+  font-stretch: 118%;
+  letter-spacing: -0.01em;
 }
 
 .num {
   font-variant-numeric: tabular-nums;
 }
 
+/* Highlighter mark behind our own brands (Indosat, Tri) wherever brands are listed. */
+.mark {
+  background: linear-gradient(transparent 12%, var(--signal-soft) 12%, var(--signal-soft) 88%, transparent 88%);
+  padding: 0 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 :focus-visible {
-  outline: 2px solid var(--ruby);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -57,9 +75,15 @@ body {
   }
 }
 
-/* Markdown answers from the AI assistant */
+/* Markdown answers from the assistant */
 .prose-chat > * + * {
   margin-top: 0.6rem;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-weight: 700;
+  font-stretch: 112%;
 }
 .prose-chat table {
   width: 100%;
@@ -87,4 +111,8 @@ body {
 }
 .prose-chat strong {
   font-weight: 650;
+}
+.prose-chat a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
