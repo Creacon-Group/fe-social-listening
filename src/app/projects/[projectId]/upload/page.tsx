@@ -62,8 +62,9 @@ function BatchRow({ projectId, batch }: { projectId: number; batch: Batch }) {
         <span className="text-xs text-muted">{fmtDateTime(batch.createdAt)}</span>
       </div>
       <p className="num mt-1.5 text-sm text-muted">
-        {fmt(batch.processedRows)} rows read: {fmt(batch.insertedRows)} new, {fmt(batch.skippedRows)} already stored,{" "}
-        {fmt(batch.failedRows)} failed
+        {batch.sourceType === "API_WEBHOOK"
+          ? `${fmt(batch.processedRows)} messages received today: ${fmt(batch.insertedRows)} new, ${fmt(batch.skippedRows)} updated, ${fmt(batch.failedRows)} failed`
+          : `${fmt(batch.processedRows)} rows read: ${fmt(batch.insertedRows)} new, ${fmt(batch.skippedRows)} already stored, ${fmt(batch.failedRows)} failed`}
       </p>
       {batch.errorMessage && <p className="mt-1 text-sm text-neg">{batch.errorMessage}</p>}
       {unmapped.length > 0 && (
@@ -151,7 +152,7 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Upload data" detail="Excel exports from Zanroo (.xlsx)" />
+      <PageHeader title="Upload data" detail="Excel exports from Zanroo (.xlsx). Messages from the Zanroo webhook appear in the history as one entry per day." />
 
       {me && !canUpload ? (
         <Notice>Viewer accounts can only read data. Ask an admin to upload the file.</Notice>
@@ -191,11 +192,11 @@ export default function UploadPage() {
         </Panel>
       )}
 
-      <Panel title="Upload history">
+      <Panel title="Data history">
         {!batches ? (
           <p className="text-sm text-muted">Loading…</p>
         ) : batches.length === 0 ? (
-          <p className="text-sm text-muted">No files uploaded to this project yet.</p>
+          <p className="text-sm text-muted">No data received for this project yet.</p>
         ) : (
           <ul className="divide-y divide-line">
             {batches.map((b) => (

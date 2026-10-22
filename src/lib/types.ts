@@ -121,6 +121,7 @@ export type BatchStatus = "PENDING" | "PROCESSING" | "PAUSED" | "COMPLETED" | "C
 
 export interface Batch {
   id: number;
+  sourceType: "EXCEL_UPLOAD" | "API_PULL" | "API_WEBHOOK";
   fileName: string | null;
   status: BatchStatus;
   processedRows: number;
