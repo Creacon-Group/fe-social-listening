@@ -17,9 +17,9 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const field =
-  "rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-50";
-const button = "rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-40";
-const ghost = "rounded-md border border-line px-3 py-2 text-sm font-semibold hover:border-ink disabled:opacity-40";
+  "rounded-lg bg-surface ring-1 ring-line ring-inset px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ink disabled:opacity-50";
+const button = "rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-on-ink disabled:opacity-40";
+const ghost = "rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-line ring-inset hover:ring-ink/40 disabled:opacity-40";
 
 function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
   const [limit, setLimit] = useState(String(user.dailyChatCredits));

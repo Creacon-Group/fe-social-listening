@@ -10,7 +10,7 @@ import type { Hashtags } from "@/lib/types";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[10px] border border-line bg-card p-4 sm:p-5">
+    <div className="rounded-[14px] bg-card p-4 sm:p-5">
       <p className="text-sm text-muted">{label}</p>
       <p className="num mt-2 text-2xl font-bold tracking-tight">{value}</p>
     </div>

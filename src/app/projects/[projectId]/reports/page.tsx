@@ -71,7 +71,7 @@ function SettingsForm({ projectId, settings, canEdit }: { projectId: number; set
         />
         <span className="mt-1.5 block text-xs text-muted">Used for the email button and the monthly report.</span>
       </label>
-      <fieldset className="rounded-[10px] border border-line p-4">
+      <fieldset className="rounded-[14px] p-4 ring-1 ring-line ring-inset">
         <legend className="px-1 text-sm font-semibold">Monthly report</legend>
         <label className="flex min-h-9 items-center gap-2 text-sm">
           <input

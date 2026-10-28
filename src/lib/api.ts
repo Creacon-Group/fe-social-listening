@@ -29,7 +29,34 @@ async function parse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const fetcher = <T>(url: string) => fetch(url, { credentials: "include" }).then((r) => parse<T>(r));
+/*
+ * Count of data requests in flight, so the toolbar can say "Updating" and content can dim
+ * while a filter change is loading. Read it with useBusy().
+ */
+let inflight = 0;
+let episode = 0; // increments each time loading starts from idle
+const listeners = new Set<() => void>();
+const emit = () => listeners.forEach((l) => l());
+export const busyStore = {
+  subscribe(l: () => void) {
+    listeners.add(l);
+    return () => listeners.delete(l);
+  },
+  get: () => inflight,
+  episode: () => episode,
+};
+
+export const fetcher = <T>(url: string) => {
+  if (inflight === 0) episode++;
+  inflight++;
+  emit();
+  return fetch(url, { credentials: "include" })
+    .then((r) => parse<T>(r))
+    .finally(() => {
+      inflight--;
+      emit();
+    });
+};
 
 export async function apiSend<T>(url: string, method: "POST" | "PUT" | "DELETE", body?: unknown): Promise<T> {
   const res = await fetch(url, {

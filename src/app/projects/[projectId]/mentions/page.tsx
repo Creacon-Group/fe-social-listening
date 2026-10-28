@@ -56,13 +56,13 @@ export default function MentionsPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search mention text"
           aria-label="Search mention text"
-          className="min-h-10 min-w-56 flex-1 rounded-md border border-line bg-card px-3 text-sm outline-none focus:border-ink"
+          className="min-h-10 min-w-56 flex-1 rounded-lg bg-card ring-1 ring-line ring-inset px-3 text-sm outline-none focus:ring-2 focus:ring-ink"
         />
         <select
           aria-label="Brand"
           value={brandId}
           onChange={(e) => setBrandId(e.target.value)}
-          className="min-h-10 rounded-md border border-line bg-card px-2.5 text-sm"
+          className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-2.5 text-sm"
         >
           <option value="">All brands</option>
           {(brands ?? []).map((b) => (
@@ -75,7 +75,7 @@ export default function MentionsPage() {
           aria-label="Sort"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="min-h-10 rounded-md border border-line bg-card px-2.5 text-sm"
+          className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-2.5 text-sm"
         >
           <option value="latest">Newest</option>
           <option value="engagements">Most engagement</option>
@@ -102,7 +102,7 @@ export default function MentionsPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="min-h-10 rounded-md border border-line bg-card px-4 font-semibold hover:border-ink disabled:opacity-40"
+              className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-4 font-semibold hover:ring-ink/40 disabled:opacity-40"
             >
               Previous
             </button>
@@ -112,7 +112,7 @@ export default function MentionsPage() {
             <button
               disabled={page >= pages}
               onClick={() => setPage((p) => p + 1)}
-              className="min-h-10 rounded-md border border-line bg-card px-4 font-semibold hover:border-ink disabled:opacity-40"
+              className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-4 font-semibold hover:ring-ink/40 disabled:opacity-40"
             >
               Next
             </button>

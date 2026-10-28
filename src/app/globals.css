@@ -1,52 +1,120 @@
 @import "tailwindcss";
 
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
 /*
- * Palette: one ink, one cool canvas, one accent. Signal yellow is Indosat's own brand colour, so
- * the accent belongs to this client; it marks "us" (own brands, active place) and nothing else.
- * Sentiment keeps its own teal / rust pair because it encodes data, not brand.
+ * Palette: one ink, one canvas, one accent. Signal yellow is Indosat's own colour, so it marks
+ * "us" (own brands, the current page) and nothing else. Sentiment keeps a teal / rust pair
+ * because it encodes data, not brand. Every token has a dark-mode value.
  */
 :root {
-  --ink: #17161c;
-  --muted: #5c5b66;
-  --line: #dcdcd6;
-  --surface: #f1f1ee;
+  color-scheme: light dark;
+  --ink: #1d1d1f;
+  --on-ink: #ffffff;
+  --muted: #6e6e73;
+  --line: rgb(0 0 0 / 0.1);
+  --surface: #f2f2f0;
   --card: #ffffff;
   --signal: #ffc800;
+  --on-signal: #1d1d1f;
   --signal-soft: #fff1b8;
   --pos: #0f766e;
   --neu: #c9cdd3;
   --neg: #c2410c;
+  --scrim: rgb(0 0 0 / 0.32);
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.14);
+  --material: rgb(242 242 240 / 0.72);
+  --material-thick: rgb(255 255 255 / 0.82);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f5f5f7;
+    --on-ink: #1d1d1f;
+    --muted: #a1a1a6;
+    --line: rgb(255 255 255 / 0.12);
+    --surface: #111113;
+    --card: #1c1c1e;
+    --signal: #ffcc1f;
+    --signal-soft: rgb(255 200 0 / 0.26);
+    --pos: #3cc2ae;
+    --neu: #4a4e57;
+    --neg: #ff7e4d;
+    --scrim: rgb(0 0 0 / 0.55);
+    --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
+    --material: rgb(17 17 19 / 0.72);
+    --material-thick: rgb(36 36 38 / 0.86);
+  }
 }
 
 @theme inline {
   --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-surface: var(--surface);
   --color-card: var(--card);
   --color-signal: var(--signal);
+  --color-on-signal: var(--on-signal);
   --color-signal-soft: var(--signal-soft);
   --color-pos: var(--pos);
   --color-neu: var(--neu);
   --color-neg: var(--neg);
-  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  /* The platform font first: SF Pro on Apple devices, Segoe UI Variable on Windows. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
+/* 100%: respect the reader's own text-size setting; everything below is in rem. */
 html {
+  font-size: 100%;
   background: var(--surface);
   color: var(--ink);
 }
 
 body {
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Archivo's width axis is the one loud typographic gesture: titles and big numbers run wide. */
-.wide {
-  font-stretch: 118%;
-  letter-spacing: -0.01em;
+/*
+ * Type scale. Tracking is set per size: large text tightens, small text opens up.
+ * Leading tightens as size grows.
+ */
+.t-title {
+  font-size: 1.875rem;
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  font-weight: 700;
+}
+.t-figure {
+  font-size: 2rem;
+  line-height: 1.05;
+  letter-spacing: -0.032em;
+  font-weight: 650;
+}
+.t-headline {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+.t-caption {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+}
+@media (min-width: 640px) {
+  .t-title {
+    font-size: 2.125rem;
+  }
+  .t-figure {
+    font-size: 2.375rem;
+  }
 }
 
 .num {
@@ -61,9 +129,53 @@ body {
   -webkit-box-decoration-break: clone;
 }
 
+/*
+ * Materials. Floating chrome is translucent so content stays visible underneath it.
+ * Thick material for surfaces that float above everything (popovers, sheets).
+ */
+.material {
+  background: var(--material);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+.material-thick {
+  background: var(--material-thick);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: var(--shadow-pop);
+}
+/* Scroll edge: a soft shadow appears under the toolbar only once content is underneath it. */
+.scroll-edge {
+  transition: box-shadow 200ms ease;
+}
+.scroll-edge[data-scrolled="true"] {
+  box-shadow: 0 1px 0 var(--line), 0 8px 16px -12px rgb(0 0 0 / 0.25);
+}
+
+/* Press feedback on pointer-down, instant; it eases back on release. */
+button:not(:disabled),
+.pressable {
+  transition: transform 180ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):active,
+.pressable:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* Content dims while new numbers load, so a filter change visibly "takes". */
+.busy-fade {
+  transition: opacity 180ms ease;
+}
+.busy-fade[data-busy="true"] {
+  opacity: 0.55;
+}
+
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -72,6 +184,37 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  button:not(:disabled):active,
+  .pressable:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .material {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .material-thick {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --line: rgb(0 0 0 / 0.4);
+    --muted: #4a4a4f;
+  }
+  .material,
+  .material-thick {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--ink);
   }
 }
 
@@ -82,8 +225,8 @@ body {
 .prose-chat h1,
 .prose-chat h2,
 .prose-chat h3 {
-  font-weight: 700;
-  font-stretch: 112%;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 .prose-chat table {
   width: 100%;

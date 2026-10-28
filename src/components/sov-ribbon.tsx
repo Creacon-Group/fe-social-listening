@@ -15,7 +15,7 @@ export function SovRibbon({
   const colorOf = (id: number, i: number) => brandColor(brandColors?.find((b) => b.id === id) ?? {}, i);
   return (
     <div className="mt-4">
-      <div className="flex h-12 w-full overflow-hidden rounded-md" role="img" aria-label="Share of voice per brand">
+      <div className="flex h-11 w-full gap-0.5 overflow-hidden rounded-lg" role="img" aria-label="Share of voice per brand">
         {competitors.brands.map((b, i) => (
           <div
             key={b.brandId}

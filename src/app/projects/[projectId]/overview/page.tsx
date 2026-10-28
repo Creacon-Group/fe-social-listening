@@ -85,7 +85,7 @@ export default function OverviewPage() {
                 ).map(([label, v, tone]) => (
                   <div key={label}>
                     <dt className="text-muted">{label}</dt>
-                    <dd className={`wide num mt-0.5 text-xl font-bold ${tone}`}>{fmt(v)}</dd>
+                    <dd className={`num mt-0.5 text-[1.375rem] font-semibold tracking-[-0.02em] ${tone}`}>{fmt(v)}</dd>
                     <dd className="num text-xs text-muted">{fmtPct((v / o.total) * 100)}</dd>
                   </div>
                 ))}

@@ -74,3 +74,14 @@ export function filterBody(f: Filters) {
     ...(f.sentiments.length ? { sentiments: f.sentiments } : {}),
   };
 }
+
+const shiftDay = (ymd: string, days: number) =>
+  new Date(new Date(`${ymd}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10);
+
+/** The dates a filter covers, counted back from the latest data day (the same rule the API uses). */
+export function periodFor(f: Filters, asOf: string | null | undefined): { from: string; to: string } | null {
+  if (f.range === "custom") return f.from && f.to ? { from: f.from, to: f.to } : null;
+  if (!asOf) return null;
+  const days = f.range === "today" ? 1 : f.range === "7d" ? 7 : 30;
+  return { from: shiftDay(asOf, 1 - days), to: asOf };
+}

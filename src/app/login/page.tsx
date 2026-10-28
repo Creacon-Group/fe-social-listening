@@ -26,9 +26,9 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-[10px] border border-line bg-card p-8">
+    <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-[14px] bg-card p-8">
       <div>
-        <p className="wide mb-6 text-lg font-extrabold leading-none">
+        <p className="mb-6 text-lg font-bold leading-none tracking-[-0.02em]">
           <span className="mark">Social Listening</span>
         </p>
         <h1 className="text-xl font-bold">Sign in</h1>
@@ -41,7 +41,7 @@ function LoginForm() {
           type="email"
           required
           autoComplete="username"
-          className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
         />
       </label>
       <label className="block text-sm font-medium">
@@ -51,7 +51,7 @@ function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
         />
       </label>
       {error && (
@@ -62,7 +62,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={busy}
-        className="min-h-11 w-full rounded-md bg-ink px-4 text-sm font-semibold text-white disabled:opacity-60"
+        className="min-h-11 w-full rounded-lg bg-ink px-4 text-sm font-semibold text-on-ink disabled:opacity-60"
       >
         {busy ? "Signing in…" : "Sign in"}
       </button>

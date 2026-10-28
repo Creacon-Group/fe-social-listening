@@ -15,7 +15,7 @@ function DayChart({ days, dataKey, color, label }: { days: TrendDay[]; dataKey: 
           <Tooltip
             labelFormatter={(d) => fmtDay(String(d))}
             formatter={(v) => [fmt(Number(v)), label]}
-            contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12 }}
+            contentStyle={{ borderRadius: 10, border: "none", background: "var(--card)", color: "var(--ink)", boxShadow: "var(--shadow-pop)", fontSize: 12 }}
           />
           <Area dataKey={dataKey} stroke={color} strokeWidth={2.5} fill={color} fillOpacity={0.08} isAnimationActive={false} />
         </AreaChart>

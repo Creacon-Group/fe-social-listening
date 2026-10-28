@@ -1,20 +1,23 @@
 import { SENTIMENT_COLOR, SENTIMENT_LABEL, fmt } from "@/lib/format";
 import type { Counts, Sentiment } from "@/lib/types";
 
-/** Shared button looks: one solid (the action that moves work forward), one quiet. */
+/*
+ * Shared control looks. One filled button (the action that moves work forward), one quiet.
+ * Radii: 8px on controls, 14px on panels. Press feedback comes from globals.css.
+ */
 export const btnPrimary =
-  "inline-flex min-h-10 items-center justify-center rounded-md bg-ink px-4 text-sm font-semibold text-white hover:bg-ink/85 disabled:opacity-40";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-semibold text-on-ink hover:opacity-90 disabled:opacity-40";
 export const btnQuiet =
-  "inline-flex min-h-10 items-center justify-center rounded-md border border-line bg-card px-3.5 text-sm font-semibold hover:border-ink disabled:opacity-40";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-card px-3.5 text-sm font-semibold ring-1 ring-line ring-inset hover:ring-ink/40 disabled:opacity-40";
 export const inputBase =
-  "rounded-md border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink disabled:opacity-60";
+  "rounded-lg bg-card px-3 py-2 text-sm outline-none ring-1 ring-line ring-inset focus:ring-2 focus:ring-ink disabled:opacity-60";
 
 export function PageHeader({ title, detail, actions }: { title: string; detail?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-line pb-4">
+    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pt-1">
       <div className="min-w-0">
-        <h1 className="wide text-[1.75rem] font-bold leading-tight sm:text-[2rem]">{title}</h1>
-        {detail && <p className="mt-1 text-sm text-muted">{detail}</p>}
+        <h1 className="t-title">{title}</h1>
+        {detail && <p className="mt-1.5 text-sm text-muted">{detail}</p>}
       </div>
       {actions}
     </header>
@@ -33,10 +36,10 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[10px] border border-line bg-card p-4 md:p-5 ${className}`}>
+    <section className={`rounded-[14px] bg-card p-4 md:p-5 ${className}`}>
       {(title || aside) && (
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          {title && <h2 className="text-[0.95rem] font-bold">{title}</h2>}
+          {title && <h2 className="t-headline">{title}</h2>}
           {aside && <div className="text-xs text-muted">{aside}</div>}
         </div>
       )}
@@ -45,10 +48,10 @@ export function Panel({
   );
 }
 
-/** Headline numbers in one band split by rules, instead of a row of identical cards. */
+/** Headline numbers in one band split by hairlines, instead of a row of identical cards. */
 export function KpiBand({ items }: { items: { label: string; value: string; hint?: string }[] }) {
   return (
-    <dl className="grid grid-cols-2 overflow-hidden rounded-[10px] border border-line bg-card lg:grid-cols-4">
+    <dl className="grid grid-cols-2 overflow-hidden rounded-[14px] bg-card lg:grid-cols-4">
       {items.map((k, i) => (
         <div
           key={k.label}
@@ -57,8 +60,8 @@ export function KpiBand({ items }: { items: { label: string; value: string; hint
           }`}
         >
           <dt className="text-sm text-muted">{k.label}</dt>
-          <dd className="wide num mt-1 text-[1.75rem] font-bold leading-none sm:text-[2.25rem]">{k.value}</dd>
-          {k.hint && <dd className="mt-2 text-xs text-muted">{k.hint}</dd>}
+          <dd className="t-figure num mt-1.5">{k.value}</dd>
+          {k.hint && <dd className="t-caption mt-2 text-muted">{k.hint}</dd>}
         </div>
       ))}
     </dl>
@@ -80,9 +83,7 @@ export function Notice({ tone = "muted", children }: { tone?: "muted" | "error";
   return (
     <div
       role={tone === "error" ? "alert" : undefined}
-      className={`rounded-[10px] border px-4 py-4 text-sm ${
-        tone === "error" ? "border-neg/40 bg-neg/5 text-neg" : "border-line bg-card text-muted"
-      }`}
+      className={`rounded-[14px] px-4 py-4 text-sm ${tone === "error" ? "bg-neg/10 text-neg" : "bg-card text-muted"}`}
     >
       {children}
     </div>
@@ -90,7 +91,7 @@ export function Notice({ tone = "muted", children }: { tone?: "muted" | "error";
 }
 
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`animate-pulse rounded-[10px] bg-line/60 ${className}`} />;
+  return <div aria-hidden className={`animate-pulse rounded-[14px] bg-line/60 ${className}`} />;
 }
 
 const ORDER: Sentiment[] = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
@@ -129,5 +130,5 @@ export function SentimentLegend() {
 export function SentimentChip({ s }: { s: Sentiment }) {
   const tone =
     s === "POSITIVE" ? "bg-pos/10 text-pos" : s === "NEGATIVE" ? "bg-neg/10 text-neg" : "bg-surface text-muted";
-  return <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${tone}`}>{SENTIMENT_LABEL[s]}</span>;
+  return <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${tone}`}>{SENTIMENT_LABEL[s]}</span>;
 }

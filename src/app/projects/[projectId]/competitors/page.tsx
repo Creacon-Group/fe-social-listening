@@ -81,7 +81,7 @@ export default function CompetitorsPage() {
           <Panel title="Share of voice" aside={`${fmt(data.totalBrandMentions)} brand mentions`}>
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <p>
-                <span className="wide num mark text-5xl font-extrabold">{fmtPct(data.own.sov)}</span>
+                <span className="num mark text-5xl font-bold tracking-[-0.04em]">{fmtPct(data.own.sov)}</span>
               </p>
               <p className="max-w-md pb-1.5 text-sm text-muted">
                 Your brands ({ownNames}) appear in {fmt(data.own.total)} unique mentions, with a combined net sentiment of{" "}
@@ -151,7 +151,7 @@ export default function CompetitorsPage() {
                     <Tooltip
                       labelFormatter={(d) => fmtDay(String(d))}
                       formatter={(v, name) => [fmt(Number(v)), data.brands.find((b) => String(b.brandId) === name)?.name ?? name]}
-                      contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12 }}
+                      contentStyle={{ borderRadius: 10, border: "none", background: "var(--card)", color: "var(--ink)", boxShadow: "var(--shadow-pop)", fontSize: 12 }}
                     />
                     <Legend formatter={(name) => data.brands.find((b) => String(b.brandId) === name)?.name ?? name} wrapperStyle={{ fontSize: 12 }} />
                     {data.brands.map((b) => (

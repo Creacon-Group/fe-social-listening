@@ -46,7 +46,7 @@ function Thumb({ src, href, className }: { src: string; href: string | null; cla
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={() => setOk(false)}
-      className={`${className} shrink-0 rounded-md border border-line bg-surface object-cover`}
+      className={`${className} shrink-0 rounded-lg bg-surface object-cover`}
     />
   );
   return href ? (
@@ -79,7 +79,7 @@ export function MentionCard({ m }: { m: Mention }) {
   const hasParent = isComment && (m.title || m.preview.where);
 
   return (
-    <article className="rounded-[10px] border border-line bg-card p-5">
+    <article className="rounded-[14px] bg-card p-4 md:p-5">
       <header className="flex items-start gap-3">
         <span
           aria-hidden
@@ -105,6 +105,11 @@ export function MentionCard({ m }: { m: Mention }) {
               {CHANNEL_LABEL[m.channel]} {(POST_TYPE[m.postType ?? ""] ?? m.postType ?? "mention").toLowerCase()}
             </span>
             <time dateTime={m.publishedAt}>{fmtDateTime(m.publishedAt)}</time>
+            {m.url && (
+              <a href={m.url} target="_blank" rel="noreferrer noopener" className="font-semibold text-ink hover:underline">
+                Open post
+              </a>
+            )}
           </p>
         </div>
         <SentimentChip s={m.sentimentLabel} />
@@ -112,7 +117,7 @@ export function MentionCard({ m }: { m: Mention }) {
 
       {hasParent ? (
         // A comment: show the post it replies to, like the source tool does.
-        <div className="mt-4 flex gap-3 rounded-[10px] border border-line bg-surface/60 p-3">
+        <div className="mt-3 flex gap-3 rounded-[10px] bg-surface p-3">
           {image && <Thumb src={image} href={m.url} className="h-20 w-20" />}
           <div className="min-w-0 text-sm">
             <p className="text-xs text-muted">
@@ -132,7 +137,7 @@ export function MentionCard({ m }: { m: Mention }) {
       <div className={`mt-3 flex gap-4 ${hasParent ? "" : "items-start"}`}>
         <div className="min-w-0 flex-1">
           <p
-            className={`whitespace-pre-line break-words text-[0.95rem] leading-relaxed ${long && !expanded ? "line-clamp-6" : ""}`}
+            className={`max-w-[72ch] whitespace-pre-line break-words text-[0.95rem] leading-relaxed ${long && !expanded ? "line-clamp-6" : ""}`}
           >
             {text || <span className="text-muted">No text (for example a sticker-only comment).</span>}
           </p>
@@ -145,7 +150,7 @@ export function MentionCard({ m }: { m: Mention }) {
         {!hasParent && image && <Thumb src={image} href={m.url} className="h-24 w-24 sm:h-28 sm:w-28" />}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
         <Metric label="likes" value={m.likes} />
         <Metric label="comments" value={m.comments} />
         <Metric label="shares" value={m.shares} />
@@ -155,23 +160,16 @@ export function MentionCard({ m }: { m: Mention }) {
           <span className="font-semibold text-ink">{fmt(m.engagements)}</span> engagement
         </span>
         <Metric label="reach" value={m.reach} />
-      </div>
-
-      <footer className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-xs">
-        {m.brands.map((b) => (
-          <span
-            key={b.id}
-            className={b.isOwn ? "mark font-semibold" : "rounded bg-surface px-1.5 py-0.5"}
-          >
-            {b.name}
+        {m.brands.length > 0 && (
+          <span className="ml-auto flex flex-wrap gap-1.5">
+            {m.brands.map((b) => (
+              <span key={b.id} className={b.isOwn ? "mark font-semibold text-ink" : "rounded-md bg-surface px-1.5 py-0.5 text-ink/80"}>
+                {b.name}
+              </span>
+            ))}
           </span>
-        ))}
-        {m.url && (
-          <a href={m.url} target="_blank" rel="noreferrer noopener" className="ml-auto font-semibold text-ink hover:underline">
-            Open original post
-          </a>
         )}
-      </footer>
+      </div>
     </article>
   );
 }

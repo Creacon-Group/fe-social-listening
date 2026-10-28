@@ -10,7 +10,7 @@ import type { Project } from "@/lib/types";
 type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean };
 
 /** Grouped the way the project brief groups modules: monitor, analyze, AI, reports. */
-const NAV: { group: string; items: NavItem[] }[] = [
+export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "Monitor",
     items: [
@@ -47,7 +47,15 @@ const NAV: { group: string; items: NavItem[] }[] = [
   },
 ];
 
-export function Sidebar({ projectId }: { projectId: number }) {
+/** Label of the page the user is on, for the phone top bar. */
+export function useCurrentPageLabel() {
+  const pathname = usePathname();
+  const slug = pathname.split("/")[3];
+  return NAV.flatMap((g) => g.items).find((i) => i.slug === slug)?.label ?? "";
+}
+
+/** Project picker, grouped navigation and account. Shared by the desktop sidebar and the phone drawer. */
+export function NavContent({ projectId, onNavigate }: { projectId: number; onNavigate?: () => void }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const router = useRouter();
@@ -65,38 +73,19 @@ export function Sidebar({ projectId }: { projectId: number }) {
     items: g.items.filter((i) => !i.superadminOnly || me?.role === "SUPERADMIN"),
   })).filter((g) => g.items.length);
 
-  const link = (item: NavItem) => {
-    const href = `/projects/${projectId}/${item.slug}`;
-    const active = pathname === href;
-    return (
-      <Link
-        key={item.slug}
-        href={item.keepFilters && query ? `${href}?${query}` : href}
-        aria-current={active ? "page" : undefined}
-        className={`flex min-h-9 items-center whitespace-nowrap rounded-md px-2.5 text-sm ${
-          active ? "bg-signal font-semibold text-ink" : "text-muted hover:bg-card hover:text-ink"
-        }`}
-      >
-        {item.label}
-      </Link>
-    );
-  };
-
   return (
-    <aside className="flex shrink-0 flex-col gap-4 md:sticky md:top-0 md:h-screen md:w-56 md:overflow-y-auto md:border-r md:border-line md:py-6 md:pl-5 md:pr-4">
-      <div className="flex items-center gap-2 pt-4 md:pt-0">
-        <span className="wide text-[1.05rem] font-extrabold leading-none">Social Listening</span>
-        <button onClick={logout} className="ml-auto min-h-9 text-xs font-semibold text-muted hover:text-ink md:hidden">
-          Sign out
-        </button>
-      </div>
+    <>
+      <p className="px-2.5 text-[1.0625rem] font-bold tracking-[-0.02em]">Social Listening</p>
 
-      <label className="block">
-        <span className="mb-1 block text-xs text-muted">Project</span>
+      <label className="mt-5 block px-2.5">
+        <span className="t-caption mb-1 block text-muted">Project</span>
         <select
           value={projectId}
-          onChange={(e) => router.push(`/projects/${e.target.value}/overview`)}
-          className="min-h-10 w-full rounded-md border border-line bg-card px-2.5 text-sm font-semibold"
+          onChange={(e) => {
+            onNavigate?.();
+            router.push(`/projects/${e.target.value}/overview`);
+          }}
+          className="min-h-10 w-full rounded-lg bg-card px-2.5 text-sm font-semibold ring-1 ring-line ring-inset"
         >
           {(projects ?? []).map((p) => (
             <option key={p.id} value={p.id}>
@@ -106,26 +95,49 @@ export function Sidebar({ projectId }: { projectId: number }) {
         </select>
       </label>
 
-      {/* Phones: one scrollable row. Desktop: grouped column. */}
-      <nav aria-label="Menu" className="-mx-1 flex gap-1 overflow-x-auto pb-1 md:hidden">
-        {groups.flatMap((g) => g.items).map(link)}
-      </nav>
-      <nav aria-label="Menu" className="hidden space-y-4 md:block">
+      <nav aria-label="Menu" className="mt-5 space-y-4">
         {groups.map((g) => (
           <div key={g.group}>
-            <p className="mb-1 px-2.5 text-xs text-muted">{g.group}</p>
-            <div className="flex flex-col gap-0.5">{g.items.map(link)}</div>
+            <p className="t-caption mb-1 px-2.5 font-medium text-muted">{g.group}</p>
+            <ul className="flex flex-col gap-0.5">
+              {g.items.map((item) => {
+                const href = `/projects/${projectId}/${item.slug}`;
+                const active = pathname === href;
+                return (
+                  <li key={item.slug}>
+                    <Link
+                      href={item.keepFilters && query ? `${href}?${query}` : href}
+                      onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
+                      className={`pressable flex min-h-10 items-center rounded-lg px-2.5 text-sm md:min-h-9 ${
+                        active ? "bg-signal font-semibold text-on-signal" : "text-ink/80 hover:bg-line/50 hover:text-ink"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ))}
       </nav>
 
-      <div className="mt-auto hidden border-t border-line pt-4 text-sm md:block">
+      <div className="mt-auto border-t border-line px-2.5 pt-4 text-sm">
         <p className="font-semibold">{me?.name ?? " "}</p>
         <p className="truncate text-xs text-muted">{me?.email}</p>
         <button onClick={logout} className="mt-2 min-h-9 text-xs font-semibold text-muted hover:text-ink">
           Sign out
         </button>
       </div>
+    </>
+  );
+}
+
+export function Sidebar({ projectId }: { projectId: number }) {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-line px-3 py-6 md:flex">
+      <NavContent projectId={projectId} />
     </aside>
   );
 }

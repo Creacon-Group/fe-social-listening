@@ -20,7 +20,7 @@ function InsightBody({ insight }: { insight: Insight }) {
           {fmtPeriod(insight.period)}, written {fmtDateTime(insight.createdAt)}
           {insight.model ? ` by ${insight.model}` : ""}
         </p>
-        <h2 className="wide mt-2 max-w-[38ch] text-[1.4rem] font-bold leading-snug">{insight.headline}</h2>
+        <h2 className="mt-2 max-w-[38ch] text-[1.375rem] font-bold leading-[1.25] tracking-[-0.022em]">{insight.headline}</h2>
       </div>
       <ol className="space-y-4">
         {insight.findings.map((f, i) => (
@@ -120,7 +120,7 @@ export default function InsightsPage() {
       )}
       {error && <Notice tone="error">{error}</Notice>}
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Panel title="Insights">
           {busy ? (
             <div className="space-y-3">
@@ -154,10 +154,10 @@ export default function InsightsPage() {
                     <button
                       onClick={() => setPicked(i.id)}
                       aria-current={selectedId === i.id ? "true" : undefined}
-                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${selectedId === i.id ? "bg-ink text-white" : "hover:bg-surface"}`}
+                      className={`w-full rounded-lg px-3 py-2 text-left text-sm ${selectedId === i.id ? "bg-line/60 font-semibold" : "hover:bg-surface"}`}
                     >
                       <span className="block truncate font-semibold">{i.headline}</span>
-                      <span className={`block text-xs ${selectedId === i.id ? "text-white/70" : "text-muted"}`}>
+                      <span className={`block text-xs text-muted font-normal`}>
                         {fmtPeriod({ from: ymd(i.periodFrom), to: ymd(i.periodTo) })}
                       </span>
                     </button>

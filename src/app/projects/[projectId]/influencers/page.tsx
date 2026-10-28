@@ -46,7 +46,7 @@ export default function InfluencersPage() {
                 aria-label="Sort influencers"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as typeof sort)}
-                className="rounded-md border border-line bg-card px-3 py-1.5 text-sm text-ink"
+                className="rounded-lg bg-card ring-1 ring-line ring-inset px-3 py-1.5 text-sm text-ink"
               >
                 {SORTS.map(([v, l]) => (
                   <option key={v} value={v}>

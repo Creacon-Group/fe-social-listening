@@ -159,7 +159,7 @@ export default function UploadPage() {
       ) : (
         <Panel>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex-1 cursor-pointer rounded-[10px] border-2 border-dashed border-line px-5 py-8 text-center text-sm hover:border-ink">
+            <label className="flex-1 cursor-pointer rounded-[14px] border-2 border-dashed border-line px-5 py-8 text-center text-sm hover:ring-ink/40">
               <input
                 ref={inputRef}
                 type="file"
@@ -179,7 +179,7 @@ export default function UploadPage() {
             <button
               onClick={start}
               disabled={!file || progress !== null}
-              className="rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
+              className="rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-on-ink disabled:opacity-40"
             >
               {progress === null ? "Upload and process" : MODE === "blob" ? "Uploading…" : `Uploading ${Math.round(progress)}%`}
             </button>

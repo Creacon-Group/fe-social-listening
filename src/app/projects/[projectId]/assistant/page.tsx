@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
@@ -114,7 +114,7 @@ function ChatPane({
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col rounded-[10px] border border-line bg-card">
+    <div className="flex min-h-[60vh] flex-col rounded-[14px] bg-card">
       <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-6" aria-live="polite">
         {messages.length === 0 && (
           <div className="space-y-3">
@@ -125,7 +125,7 @@ function ChatPane({
                   key={s}
                   onClick={() => submit(s)}
                   disabled={outOfCredits}
-                  className="rounded-[10px] border border-line px-3.5 py-2 text-left text-sm hover:border-ink disabled:opacity-40"
+                  className="rounded-[14px] px-3.5 py-2 text-left ring-1 ring-line ring-inset text-sm hover:ring-ink/40 disabled:opacity-40"
                 >
                   {s}
                 </button>
@@ -136,7 +136,7 @@ function ChatPane({
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
-              <p className="max-w-[80%] whitespace-pre-line rounded-lg rounded-br-sm bg-ink px-4 py-2.5 text-sm text-white">
+              <p className="max-w-[80%] whitespace-pre-line rounded-lg rounded-br-sm bg-ink px-4 py-2.5 text-sm text-on-ink">
                 {m.parts.map((p) => (p.type === "text" ? p.text : "")).join("")}
               </p>
             </div>
@@ -203,14 +203,14 @@ function ChatPane({
             disabled={outOfCredits}
             placeholder={outOfCredits ? "No credits left today" : "Ask a question"}
             aria-label="Question for the brand assistant"
-            className="flex-1 resize-none rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+            className="flex-1 resize-none rounded-[14px] bg-surface px-3.5 ring-1 ring-line ring-inset py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
           />
           {busy ? (
-            <button type="button" onClick={() => stop()} className="rounded-md border border-line px-4 py-2.5 text-sm font-semibold">
+            <button type="button" onClick={() => stop()} className="rounded-lg px-4 py-2.5 text-sm ring-1 ring-line ring-inset font-semibold">
               Stop
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-md bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
+            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink disabled:opacity-40">
               Send
             </button>
           )}
@@ -244,11 +244,34 @@ export default function AssistantPage() {
     void refreshSessions();
   }
 
-  async function remove(id: string) {
-    await apiSend(`${sessionsKey}/${id}`, "DELETE");
-    if (activeId === id) setActiveId(null);
-    void refreshSessions();
+  // Delete with undo instead of a confirm dialog: the chat disappears at once, and is only removed
+  // on the server when the undo window closes.
+  const [deleted, setDeleted] = useState<ChatSession | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commitDelete = useCallback(
+    async (id: string) => {
+      await apiSend(`${sessionsKey}/${id}`, "DELETE").catch(() => undefined);
+      setDeleted((d) => (d?.id === id ? null : d));
+      void refreshSessions();
+    },
+    [sessionsKey, refreshSessions],
+  );
+  function remove(s: ChatSession) {
+    if (deleted && deleteTimer.current) {
+      clearTimeout(deleteTimer.current);
+      void commitDelete(deleted.id);
+    }
+    if (activeId === s.id) setActiveId(null);
+    setDeleted(s);
+    deleteTimer.current = setTimeout(() => void commitDelete(s.id), 5000);
   }
+  function undoDelete() {
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    setDeleted(null);
+  }
+  useEffect(() => () => {
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+  }, []);
 
   const isNew = activeId !== null && pending?.id === activeId;
   const { data: credits } = useCredits();
@@ -259,11 +282,11 @@ export default function AssistantPage() {
       <PageHeader title="Brand assistant" detail="Answers come from this project&apos;s social listening data" />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[16rem_1fr]">
         <aside className="space-y-2">
-          <button onClick={newChat} className="w-full rounded-md bg-ink px-4 py-2.5 text-sm font-semibold text-white">
+          <button onClick={newChat} className="w-full rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink">
             New chat
           </button>
           <ul className="space-y-1">
-            {(sessions ?? []).map((s) => (
+            {(sessions ?? []).filter((s) => s.id !== deleted?.id).map((s) => (
               <li key={s.id} className="group flex items-center gap-1">
                 <button
                   onClick={() => {
@@ -279,19 +302,27 @@ export default function AssistantPage() {
                   <span className="block text-xs font-normal text-muted">{fmtDateTime(s.updatedAt)}</span>
                 </button>
                 <button
-                  onClick={() => remove(s.id)}
+                  onClick={() => remove(s)}
                   aria-label={`Delete ${s.title ?? "chat"}`}
-                  className="rounded-lg px-2 py-1 text-xs text-muted opacity-0 hover:text-neg focus:opacity-100 group-hover:opacity-100"
+                  className="min-h-9 rounded-lg px-2 text-xs text-muted opacity-0 hover:text-neg focus:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                 >
                   Delete
                 </button>
               </li>
             ))}
           </ul>
+          {deleted && (
+            <p role="status" className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2 text-xs text-muted">
+              Chat deleted.
+              <button onClick={undoDelete} className="min-h-8 font-semibold text-ink hover:underline">
+                Undo
+              </button>
+            </p>
+          )}
         </aside>
 
         {!activeId ? (
-          <div className="space-y-4 rounded-[10px] border border-line bg-card p-6">
+          <div className="space-y-4 rounded-[14px] bg-card p-6">
             {outOfCredits && credits && <CreditsExhausted credits={credits} />}
             <p className="text-sm text-muted">Start a new chat or pick an earlier one.</p>
             {credits && <p className="text-xs text-muted">{creditLine(credits)}</p>}
@@ -305,7 +336,7 @@ export default function AssistantPage() {
                     setActiveId(created.id);
                   }}
                   disabled={outOfCredits}
-                  className="rounded-[10px] border border-line px-3.5 py-2 text-left text-sm hover:border-ink disabled:opacity-40"
+                  className="rounded-[14px] px-3.5 py-2 text-left ring-1 ring-line ring-inset text-sm hover:ring-ink/40 disabled:opacity-40"
                 >
                   {s}
                 </button>
