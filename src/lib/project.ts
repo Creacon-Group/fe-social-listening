@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "./api";
-import type { Brand, User } from "./types";
+import type { Brand, Category, User } from "./types";
 
 export function useProjectId() {
   return Number(useParams<{ projectId: string }>().projectId);
@@ -26,3 +26,7 @@ export function useMe() {
 
 const FALLBACK = ["#e11d48", "#7c3aed", "#8b95a7", "#6c8ebf", "#c9a35b", "#9ca3af"];
 export const brandColor = (b: { color?: string | null }, i = 0) => b.color ?? FALLBACK[i % FALLBACK.length];
+
+export function useCategories(projectId: number) {
+  return useSWR<Category[]>(`/api/projects/${projectId}/categories`, fetcher);
+}

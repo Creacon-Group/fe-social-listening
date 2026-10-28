@@ -105,6 +105,7 @@ export interface Mention {
   sentimentLabel: Sentiment;
   tags: string[] | null;
   brands: { id: number; name: string; isOwn: boolean }[];
+  categories: { id: number; name: string; color: string | null }[];
   /** Card extras from the export. `where` = account whose post a comment replies to. */
   preview: { where: string | null; images: string[]; userLink: string | null; bookmarks: number };
 }
@@ -241,4 +242,46 @@ export interface ReportSettings {
   monthlyDay: number;
   lastMonthlyReport: string | null;
   emailConfigured: boolean;
+}
+
+/** Topic category set up by an admin: Zanroo tags it maps from, and keywords. */
+export interface Category {
+  id: number;
+  name: string;
+  color: string | null;
+  zanrooTags: string[];
+  keywords: string[];
+  sortOrder: number;
+  mentionCount: number;
+}
+
+export interface ZanrooTagSuggestions {
+  sampled: number;
+  items: { name: string; kind: "tag" | "category"; count: number }[];
+}
+
+export interface CategoryPreview {
+  total: number;
+  samples: { id: number; channel: Channel; content: string | null }[];
+}
+
+export interface Topic extends Counts {
+  categoryId: number;
+  name: string;
+  color: string | null;
+  netSentiment: number;
+  engagements: number;
+  share: number;
+  previousTotal: number;
+  change: number | null;
+  days: { day: string; total: number }[];
+  brands: (Counts & { brandId: number; name: string; isOwn: boolean; color: string | null; netSentiment: number })[];
+}
+
+export interface Topics {
+  period: Period;
+  total: number;
+  categorized: number;
+  uncategorized: number;
+  topics: Topic[];
 }

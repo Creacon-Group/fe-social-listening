@@ -32,7 +32,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const projectId = useProjectId();
   const pathname = usePathname();
   const pageLabel = useCurrentPageLabel();
-  const showFilters = !pathname.endsWith("/upload") && !pathname.endsWith("/credits");
+  const showFilters = !["/upload", "/credits", "/categories"].some((p) => pathname.endsWith(p));
   const scrolled = useScrolled();
   const pastTitle = useScrolled(56);
   const busy = useBusy(250);

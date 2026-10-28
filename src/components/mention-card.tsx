@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SentimentChip } from "@/components/ui";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime } from "@/lib/format";
+import { brandColor } from "@/lib/project";
 import type { Mention } from "@/lib/types";
 
 const POST_TYPE: Record<string, string> = {
@@ -160,6 +161,16 @@ export function MentionCard({ m }: { m: Mention }) {
           <span className="font-semibold text-ink">{fmt(m.engagements)}</span> engagement
         </span>
         <Metric label="reach" value={m.reach} />
+        {m.categories?.length > 0 && (
+          <span className="flex flex-wrap gap-1.5" aria-label="Topics">
+            {m.categories.map((c) => (
+              <span key={c.id} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-ink/80 ring-1 ring-line ring-inset">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: brandColor(c, c.id) }} />
+                {c.name}
+              </span>
+            ))}
+          </span>
+        )}
         {m.brands.length > 0 && (
           <span className="ml-auto flex flex-wrap gap-1.5">
             {m.brands.map((b) => (

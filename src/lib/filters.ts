@@ -10,6 +10,8 @@ export interface Filters {
   to?: string;
   channels: Channel[];
   sentiments: Sentiment[];
+  /** Topic category ids; 0 = mentions with no category. */
+  categories: number[];
 }
 
 const list = <T extends string>(v: string | null) => (v ? (v.split(",").filter(Boolean) as T[]) : []);
@@ -27,6 +29,7 @@ export function useFilters() {
       to: params.get("to") ?? undefined,
       channels: list<Channel>(params.get("channels")),
       sentiments: list<Sentiment>(params.get("sentiments")),
+      categories: (params.get("categories") ?? "").split(",").filter(Boolean).map(Number).filter(Number.isInteger),
     }),
     [params],
   );
@@ -42,6 +45,7 @@ export function useFilters() {
       }
       if (next.channels.length) q.set("channels", next.channels.join(","));
       if (next.sentiments.length) q.set("sentiments", next.sentiments.join(","));
+      if (next.categories.length) q.set("categories", next.categories.join(","));
       router.replace(`${pathname}?${q.toString()}`, { scroll: false });
     },
     [filters, pathname, router],
@@ -60,6 +64,7 @@ export function filterQuery(f: Filters, extra: Record<string, string | number | 
   }
   if (f.channels.length) q.set("channels", f.channels.join(","));
   if (f.sentiments.length) q.set("sentiments", f.sentiments.join(","));
+  if (f.categories.length) q.set("categoryIds", f.categories.join(","));
   for (const [k, v] of Object.entries(extra)) if (v !== undefined && v !== "") q.set(k, String(v));
   return q.toString();
 }
@@ -72,6 +77,7 @@ export function filterBody(f: Filters) {
     ...(f.range === "custom" && f.from && f.to ? { from: f.from, to: f.to } : {}),
     ...(f.channels.length ? { channels: f.channels } : {}),
     ...(f.sentiments.length ? { sentiments: f.sentiments } : {}),
+    ...(f.categories.length ? { categoryIds: f.categories } : {}),
   };
 }
 

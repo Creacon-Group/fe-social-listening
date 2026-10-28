@@ -24,6 +24,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { slug: "demographics", label: "Demographics", keepFilters: true },
       { slug: "influencers", label: "Influencers & sources", keepFilters: true },
+      { slug: "topics", label: "Topics", keepFilters: true },
       { slug: "hashtags", label: "Hashtags", keepFilters: true },
     ],
   },
@@ -42,6 +43,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: "Manage",
     items: [
       { slug: "upload", label: "Upload data", keepFilters: false },
+      { slug: "categories", label: "Topic categories", keepFilters: false },
       { slug: "credits", label: "Assistant credits", keepFilters: false, superadminOnly: true },
     ],
   },

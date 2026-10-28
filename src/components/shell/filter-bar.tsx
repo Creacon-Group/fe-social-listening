@@ -8,7 +8,7 @@ import { btnPrimary, btnQuiet } from "@/components/ui";
 import { useBusy } from "@/lib/busy";
 import { useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmtDay, SENTIMENT_LABEL } from "@/lib/format";
-import { useDataAsOf } from "@/lib/project";
+import { useCategories, useDataAsOf, useProjectId } from "@/lib/project";
 import type { Channel, RangePreset, Sentiment } from "@/lib/types";
 
 const CHANNELS: Channel[] = ["X", "TIKTOK", "INSTAGRAM", "ONLINE_NEWS", "FACEBOOK", "YOUTUBE"];
@@ -32,8 +32,31 @@ function SlidersIcon() {
 /** Channel and sentiment choices. The same content goes in the desktop popover and the phone sheet. */
 function FilterChoices() {
   const { filters, setFilters } = useFilters();
+  const { data: categories } = useCategories(useProjectId());
   return (
     <div className="space-y-5">
+      {categories && categories.length > 0 && (
+        <fieldset>
+          <legend className="mb-2 text-sm font-semibold">Topic</legend>
+          <div className="flex flex-wrap gap-2">
+            <ToggleChip on={!filters.categories.length} onClick={() => setFilters({ categories: [] })}>
+              All topics
+            </ToggleChip>
+            {categories.map((c) => (
+              <ToggleChip
+                key={c.id}
+                on={filters.categories.includes(c.id)}
+                onClick={() => setFilters({ categories: toggle(filters.categories, c.id) })}
+              >
+                {c.name}
+              </ToggleChip>
+            ))}
+            <ToggleChip on={filters.categories.includes(0)} onClick={() => setFilters({ categories: toggle(filters.categories, 0) })}>
+              No topic
+            </ToggleChip>
+          </div>
+        </fieldset>
+      )}
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Channel</legend>
         <div className="flex flex-wrap gap-2">
@@ -123,7 +146,9 @@ export function FilterBar({ projectId }: { projectId: number }) {
   const close = useCallback(() => setOpen(false), []);
   const trigger = useRef<HTMLButtonElement>(null);
 
-  const count = filters.channels.length + filters.sentiments.length;
+  const { data: categories } = useCategories(projectId);
+  const categoryName = (id: number) => (id === 0 ? "No topic" : (categories?.find((c) => c.id === id)?.name ?? "Topic"));
+  const count = filters.channels.length + filters.sentiments.length + filters.categories.length;
   const setRange = (range: RangePreset) => {
     if (range !== "custom") return setFilters({ range });
     setFilters({
@@ -188,6 +213,13 @@ export function FilterBar({ projectId }: { projectId: number }) {
             {filters.channels.map((c) => (
               <ActiveChip key={c} label={CHANNEL_LABEL[c]} onRemove={() => setFilters({ channels: toggle(filters.channels, c) })} />
             ))}
+            {filters.categories.map((id) => (
+              <ActiveChip
+                key={`cat-${id}`}
+                label={categoryName(id)}
+                onRemove={() => setFilters({ categories: toggle(filters.categories, id) })}
+              />
+            ))}
             {filters.sentiments.map((s) => (
               <ActiveChip
                 key={s}
@@ -211,7 +243,7 @@ export function FilterBar({ projectId }: { projectId: number }) {
           {count > 0 && (
             <button
               type="button"
-              onClick={() => setFilters({ channels: [], sentiments: [] })}
+              onClick={() => setFilters({ channels: [], sentiments: [], categories: [] })}
               className="mt-4 text-sm font-semibold text-muted hover:text-ink"
             >
               Clear filters
@@ -225,7 +257,7 @@ export function FilterBar({ projectId }: { projectId: number }) {
           title="Filters"
           footer={
             <>
-              <button type="button" onClick={() => setFilters({ channels: [], sentiments: [] })} disabled={!count} className={btnQuiet}>
+              <button type="button" onClick={() => setFilters({ channels: [], sentiments: [], categories: [] })} disabled={!count} className={btnQuiet}>
                 Clear
               </button>
               <button type="button" onClick={close} className={btnPrimary} data-autofocus>
