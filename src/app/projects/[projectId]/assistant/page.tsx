@@ -203,7 +203,7 @@ function ChatPane({
             disabled={outOfCredits}
             placeholder={outOfCredits ? "No credits left today" : "Ask a question"}
             aria-label="Question for the brand assistant"
-            className="flex-1 resize-none rounded-[14px] bg-surface px-3.5 ring-1 ring-line ring-inset py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
+            className="flex-1 resize-none rounded-[14px] bg-surface px-3.5 ring-1 ring-line ring-inset py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
           />
           {busy ? (
             <button type="button" onClick={() => stop()} className="rounded-lg px-4 py-2.5 text-sm ring-1 ring-line ring-inset font-semibold">

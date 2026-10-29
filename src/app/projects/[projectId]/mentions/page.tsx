@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { MentionCard } from "@/components/mention-card";
-import { Notice, PageHeader, Skeleton } from "@/components/ui";
+import { Select } from "@/components/select";
+import { inputBase, Notice, PageHeader, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { fmt, fmtPeriod } from "@/lib/format";
@@ -56,31 +57,21 @@ export default function MentionsPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search mention text"
           aria-label="Search mention text"
-          className="min-h-10 min-w-56 flex-1 rounded-lg bg-card ring-1 ring-line ring-inset px-3 text-sm outline-none focus:ring-2 focus:ring-ink"
+          className={`${inputBase} min-h-10 min-w-56 flex-1`}
         />
-        <select
-          aria-label="Brand"
-          value={brandId}
-          onChange={(e) => setBrandId(e.target.value)}
-          className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-2.5 text-sm"
-        >
+        <Select label="Brand" hideLabel value={brandId} onChange={(e) => setBrandId(e.target.value)} className="min-w-40">
           <option value="">All brands</option>
           {(brands ?? []).map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
             </option>
           ))}
-        </select>
-        <select
-          aria-label="Sort"
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="min-h-10 rounded-lg bg-card ring-1 ring-line ring-inset px-2.5 text-sm"
-        >
-          <option value="latest">Newest</option>
+        </Select>
+        <Select label="Sort" hideLabel value={sort} onChange={(e) => setSort(e.target.value)} className="min-w-44">
+          <option value="latest">Newest first</option>
           <option value="engagements">Most engagement</option>
           <option value="reach">Most reach</option>
-        </select>
+        </Select>
       </div>
 
       {error ? (

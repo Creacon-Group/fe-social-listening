@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
+import { Select } from "@/components/select";
 import { apiSend, fetcher } from "@/lib/api";
 import { useMe } from "@/lib/project";
 import type { Project } from "@/lib/types";
@@ -77,25 +78,30 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
 
   return (
     <>
-      <p className="px-2.5 text-[1.0625rem] font-bold tracking-[-0.02em]">Social Listening</p>
+      <div className="flex items-center gap-2.5 px-2.5">
+        {/* eslint-disable-next-line @next/next/no-img-element -- 7 KB static mark */}
+        <img src="/creacon-mark.png" alt="" width={28} height={28} className="h-7 w-7" />
+        <span className="leading-tight">
+          <span className="block text-[1.0625rem] font-bold tracking-[-0.02em]">Social Listening</span>
+          <span className="t-caption block text-muted">by Creacon</span>
+        </span>
+      </div>
 
-      <label className="mt-5 block px-2.5">
-        <span className="t-caption mb-1 block text-muted">Project</span>
-        <select
-          value={projectId}
-          onChange={(e) => {
-            onNavigate?.();
-            router.push(`/projects/${e.target.value}/overview`);
-          }}
-          className="min-h-10 w-full rounded-lg bg-card px-2.5 text-sm font-semibold ring-1 ring-line ring-inset"
-        >
-          {(projects ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        label="Project"
+        className="mt-5 px-2.5"
+        value={projectId}
+        onChange={(e) => {
+          onNavigate?.();
+          router.push(`/projects/${e.target.value}/overview`);
+        }}
+      >
+        {(projects ?? []).map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </Select>
 
       <nav aria-label="Menu" className="mt-5 space-y-4">
         {groups.map((g) => (
@@ -112,7 +118,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
                       onClick={onNavigate}
                       aria-current={active ? "page" : undefined}
                       className={`pressable flex min-h-10 items-center rounded-lg px-2.5 text-sm md:min-h-9 ${
-                        active ? "bg-signal font-semibold text-on-signal" : "text-ink/80 hover:bg-line/50 hover:text-ink"
+                        active ? "bg-accent-soft font-semibold text-accent" : "text-ink/80 hover:bg-line/50 hover:text-ink"
                       }`}
                     >
                       {item.label}

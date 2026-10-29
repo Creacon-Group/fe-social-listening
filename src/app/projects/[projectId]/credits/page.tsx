@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Notice, PageHeader, Panel } from "@/components/ui";
+import { Select } from "@/components/select";
+import { btnPrimary, btnQuiet, inputBase, Notice, PageHeader, Panel } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { useMe } from "@/lib/project";
 import type { AdminUser, Role } from "@/lib/types";
@@ -16,10 +17,10 @@ const ROLE_LABEL: Record<Role, string> = {
   VIEWER: "Viewer",
 };
 
-const field =
-  "rounded-lg bg-surface ring-1 ring-line ring-inset px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ink disabled:opacity-50";
-const button = "rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-on-ink disabled:opacity-40";
-const ghost = "rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-line ring-inset hover:ring-ink/40 disabled:opacity-40";
+// One look for controls across the app: the shared input and button styles.
+const field = inputBase;
+const button = btnPrimary;
+const ghost = btnQuiet;
 
 function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
   const [limit, setLimit] = useState(String(user.dailyChatCredits));
@@ -185,11 +186,11 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
       </label>
       <label>
         <span className="mb-1 block text-xs text-muted">Role</span>
-        <select value={form.role} onChange={set("role")} className={`${field} w-full`}>
+        <Select label="Role" hideLabel value={form.role} onChange={set("role")}>
           <option value="VIEWER">Viewer: read only</option>
           <option value="ANALYST">Analyst: can upload data</option>
           <option value="ADMIN">Admin: all projects</option>
-        </select>
+        </Select>
       </label>
       <label>
         <span className="mb-1 block text-xs text-muted">First password (10+ characters)</span>

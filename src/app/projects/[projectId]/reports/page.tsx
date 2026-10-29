@@ -3,6 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { ReportActions } from "@/components/report-actions";
+import { Select } from "@/components/select";
 import { btnPrimary, inputBase, Notice, PageHeader, Panel, Skeleton } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { useFilters } from "@/lib/filters";
@@ -85,18 +86,21 @@ function SettingsForm({ projectId, settings, canEdit }: { projectId: number; set
         </label>
         <label className="mt-2 flex flex-wrap items-center gap-2 text-sm">
           Send on day
-          <select
+          <Select
+            label="Send on day"
+            hideLabel
+            density="sm"
             value={monthlyDay}
             onChange={(e) => setMonthlyDay(Number(e.target.value))}
             disabled={!canEdit || !monthlyEnabled}
-            className={`${inputBase} min-h-9 py-1`}
+            className="w-20"
           >
             {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
             ))}
-          </select>
+          </Select>
           of the month, at 08:00 WIB
         </label>
         <p className="mt-3 text-xs text-muted">

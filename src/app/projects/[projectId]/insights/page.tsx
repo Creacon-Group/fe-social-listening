@@ -31,7 +31,7 @@ function InsightBody({ insight }: { insight: Insight }) {
             <p className="mt-1">
               {f.body}{" "}
               {f.refs.map((r) => (
-                <a key={r} href={`#src-${r}`} className="font-semibold text-ink underline decoration-signal decoration-2 underline-offset-2">
+                <a key={r} href={`#src-${r}`} className="font-semibold text-ink underline decoration-accent decoration-2 underline-offset-2">
                   [{r}]
                 </a>
               ))}

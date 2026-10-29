@@ -10,7 +10,7 @@ export const btnPrimary =
 export const btnQuiet =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-card px-3.5 text-sm font-semibold ring-1 ring-line ring-inset hover:ring-ink/40 disabled:opacity-40";
 export const inputBase =
-  "rounded-lg bg-card px-3 py-2 text-sm outline-none ring-1 ring-line ring-inset focus:ring-2 focus:ring-ink disabled:opacity-60";
+  "rounded-lg bg-card px-3 py-2 text-sm outline-none ring-1 ring-line ring-inset focus:ring-2 focus:ring-accent disabled:opacity-60";
 
 export function PageHeader({ title, detail, actions }: { title: string; detail?: React.ReactNode; actions?: React.ReactNode }) {
   return (

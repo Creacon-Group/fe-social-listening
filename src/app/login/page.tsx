@@ -28,9 +28,14 @@ function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-[14px] bg-card p-8">
       <div>
-        <p className="mb-6 text-lg font-bold leading-none tracking-[-0.02em]">
-          <span className="mark">Social Listening</span>
-        </p>
+        <div className="mb-7 flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element -- 7 KB static mark */}
+          <img src="/creacon-mark.png" alt="" width={32} height={32} className="h-8 w-8" />
+          <span className="leading-tight">
+            <span className="block text-lg font-bold tracking-[-0.02em]">Social Listening</span>
+            <span className="t-caption block text-muted">by Creacon</span>
+          </span>
+        </div>
         <h1 className="text-xl font-bold">Sign in</h1>
         <p className="mt-1 text-sm text-muted">Use the account your team admin gave you.</p>
       </div>
@@ -41,7 +46,7 @@ function LoginForm() {
           type="email"
           required
           autoComplete="username"
-          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
+          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
         />
       </label>
       <label className="block text-sm font-medium">
@@ -51,7 +56,7 @@ function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ink"
+          className="mt-1.5 w-full rounded-lg bg-surface ring-1 ring-line ring-inset px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
         />
       </label>
       {error && (

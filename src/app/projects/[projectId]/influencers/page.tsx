@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { Select } from "@/components/select";
 import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
@@ -42,18 +43,13 @@ export default function InfluencersPage() {
           <Panel
             title="Top influencers"
             aside={
-              <select
-                aria-label="Sort influencers"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as typeof sort)}
-                className="rounded-lg bg-card ring-1 ring-line ring-inset px-3 py-1.5 text-sm text-ink"
-              >
+              <Select label="Sort influencers" hideLabel density="sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
                 {SORTS.map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
                   </option>
                 ))}
-              </select>
+              </Select>
             }
           >
             <div className={`-mx-3 overflow-x-auto ${isLoading ? "opacity-60" : ""}`}>

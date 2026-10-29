@@ -31,7 +31,7 @@ export function ContactLink({ contact }: { contact: string }) {
 
 export function CreditsExhausted({ credits }: { credits: CreditStatus }) {
   return (
-    <div role="status" className="rounded-[10px] border border-signal bg-signal-soft/50 px-4 py-3 text-sm">
+    <div role="status" className="rounded-[14px] bg-accent-soft px-4 py-3 text-sm">
       <p className="font-semibold">You&apos;ve used today&apos;s assistant credits ({credits.used} of {credits.limit} questions).</p>
       <p className="mt-1 text-muted">
         Contact your account manager

@@ -3,9 +3,11 @@
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
 /*
- * Palette: one ink, one canvas, one accent. Signal yellow is Indosat's own colour, so it marks
- * "us" (own brands, the current page) and nothing else. Sentiment keeps a teal / rust pair
- * because it encodes data, not brand. Every token has a dark-mode value.
+ * Palette from the Creacon logo: black ink like the wordmark, and one accent, the indigo from the
+ * middle of the logo's cyan-to-magenta mark (darkened a step so text on it passes WCAG AA).
+ * The accent marks "us" (own brands, the current page, links) and nothing else; the gradient
+ * itself appears only in the logo. Sentiment keeps a teal / rust pair because it encodes data.
+ * Every token has a dark-mode value.
  */
 :root {
   color-scheme: light dark;
@@ -15,9 +17,8 @@
   --line: rgb(0 0 0 / 0.1);
   --surface: #f2f2f0;
   --card: #ffffff;
-  --signal: #ffc800;
-  --on-signal: #1d1d1f;
-  --signal-soft: #fff1b8;
+  --accent: #3d55c4;
+  --accent-soft: #e9ecfb;
   --pos: #0f766e;
   --neu: #c9cdd3;
   --neg: #c2410c;
@@ -35,8 +36,8 @@
     --line: rgb(255 255 255 / 0.12);
     --surface: #111113;
     --card: #1c1c1e;
-    --signal: #ffcc1f;
-    --signal-soft: rgb(255 200 0 / 0.26);
+    --accent: #a5b4fc;
+    --accent-soft: rgb(110 130 235 / 0.24);
     --pos: #3cc2ae;
     --neu: #4a4e57;
     --neg: #ff7e4d;
@@ -54,9 +55,8 @@
   --color-line: var(--line);
   --color-surface: var(--surface);
   --color-card: var(--card);
-  --color-signal: var(--signal);
-  --color-on-signal: var(--on-signal);
-  --color-signal-soft: var(--signal-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-pos: var(--pos);
   --color-neu: var(--neu);
   --color-neg: var(--neg);
@@ -121,9 +121,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Highlighter mark behind our own brands (Indosat, Tri) wherever brands are listed. */
+/* Soft accent mark behind our own brands (Indosat, Tri) wherever brands are listed. */
 .mark {
-  background: linear-gradient(transparent 12%, var(--signal-soft) 12%, var(--signal-soft) 88%, transparent 88%);
+  background: linear-gradient(transparent 12%, var(--accent-soft) 12%, var(--accent-soft) 88%, transparent 88%);
   padding: 0 0.25em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -173,7 +173,7 @@ button:not(:disabled):active,
 }
 
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 6px;
 }

@@ -12,5 +12,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Not /api (proxied to the backend, must not buffer large uploads), not assets or icons, not /login.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|login).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|creacon-mark.png|login).*)"],
 };
