@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SentimentChip } from "@/components/ui";
-import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime } from "@/lib/format";
+import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime, webUrl } from "@/lib/format";
 import { brandColor } from "@/lib/project";
 import type { Mention } from "@/lib/types";
 
@@ -74,6 +74,8 @@ export function MentionCard({ m }: { m: Mention }) {
   const name = m.authorName ?? (handle ? `@${handle}` : "Unknown author");
   const showHandle = handle && m.authorName && m.authorName.replace(/^@/, "") !== handle;
   const isComment = m.postType === "Commented";
+  const url = webUrl(m.url);
+  const userLink = webUrl(m.preview.userLink);
   const image = m.preview.images[0] ?? youtubeThumb(m.url);
   const text = m.content ?? "";
   const long = text.length > LONG;
@@ -90,8 +92,8 @@ export function MentionCard({ m }: { m: Mention }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-            {m.preview.userLink ? (
-              <a href={m.preview.userLink} target="_blank" rel="noreferrer noopener" className="font-semibold hover:underline">
+            {userLink ? (
+              <a href={userLink} target="_blank" rel="noreferrer noopener" className="font-semibold hover:underline">
                 {name}
               </a>
             ) : (
@@ -106,8 +108,8 @@ export function MentionCard({ m }: { m: Mention }) {
               {CHANNEL_LABEL[m.channel]} {(POST_TYPE[m.postType ?? ""] ?? m.postType ?? "mention").toLowerCase()}
             </span>
             <time dateTime={m.publishedAt}>{fmtDateTime(m.publishedAt)}</time>
-            {m.url && (
-              <a href={m.url} target="_blank" rel="noreferrer noopener" className="font-semibold text-ink hover:underline">
+            {url && (
+              <a href={url} target="_blank" rel="noreferrer noopener" className="font-semibold text-ink hover:underline">
                 Open post
               </a>
             )}
@@ -119,7 +121,7 @@ export function MentionCard({ m }: { m: Mention }) {
       {hasParent ? (
         // A comment: show the post it replies to, like the source tool does.
         <div className="mt-3 flex gap-3 rounded-[10px] bg-surface p-3">
-          {image && <Thumb src={image} href={m.url} className="h-20 w-20" />}
+          {image && <Thumb src={image} href={url} className="h-20 w-20" />}
           <div className="min-w-0 text-sm">
             <p className="text-xs text-muted">
               Reply to a post
@@ -148,7 +150,7 @@ export function MentionCard({ m }: { m: Mention }) {
             </button>
           )}
         </div>
-        {!hasParent && image && <Thumb src={image} href={m.url} className="h-24 w-24 sm:h-28 sm:w-28" />}
+        {!hasParent && image && <Thumb src={image} href={url} className="h-24 w-24 sm:h-28 sm:w-28" />}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">

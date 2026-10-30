@@ -6,7 +6,7 @@ import { Select } from "@/components/select";
 import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
-import { CHANNEL_LABEL, fmt, fmtCompact, fmtPeriod, fmtSigned } from "@/lib/format";
+import { CHANNEL_LABEL, fmt, fmtCompact, fmtPeriod, fmtSigned, webUrl } from "@/lib/format";
 import { useProjectId } from "@/lib/project";
 import type { Influencers } from "@/lib/types";
 
@@ -72,8 +72,8 @@ export default function InfluencersPage() {
                       <tr key={`${a.channel}-${a.handle}`} className="border-b border-line last:border-0">
                         <td className={`${td} num text-muted`}>{i + 1}</td>
                         <td className={td}>
-                          {a.userLink ? (
-                            <a href={a.userLink} target="_blank" rel="noreferrer noopener" className="font-semibold hover:underline">
+                          {webUrl(a.userLink) ? (
+                            <a href={webUrl(a.userLink)!} target="_blank" rel="noreferrer noopener" className="font-semibold hover:underline">
                               {a.name ?? `@${handle}`}
                             </a>
                           ) : (

@@ -47,3 +47,6 @@ export const SENTIMENT_COLOR: Record<Sentiment, string> = {
   NEUTRAL: "var(--neu)",
   NEGATIVE: "var(--neg)",
 };
+
+/** Links from mention data (Excel, Zanroo): only http(s) is rendered, so javascript:/data: URLs can't run. */
+export const webUrl = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : null);

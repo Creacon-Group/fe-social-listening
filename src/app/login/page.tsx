@@ -5,6 +5,20 @@ import { Suspense, useState } from "react";
 import { btnPrimary, inputBase } from "@/components/ui";
 import { ApiError, apiSend } from "@/lib/api";
 
+/**
+ * Only same-origin paths. "/\evil.com" passed the old startsWith("/") check, but browsers read the
+ * backslash as "//", which sent users to another site after signing in.
+ */
+function safeNext(next: string | null) {
+  if (!next) return "/";
+  try {
+    const url = new URL(next, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -19,7 +33,7 @@ function LoginForm() {
     try {
       await apiSend("/api/auth/login", "POST", { email: form.get("email"), password: form.get("password") });
       const next = params.get("next");
-      router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
+      router.replace(safeNext(next));
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401 ? "Wrong email or password." : "Sign-in failed. Check your connection and try again.");
       setBusy(false);

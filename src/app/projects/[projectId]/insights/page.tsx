@@ -6,7 +6,7 @@ import { TrendCharts } from "@/components/trend-charts";
 import { btnPrimary, Notice, PageHeader, Panel, SentimentChip, Skeleton } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { filterBody, filterQuery, useFilters } from "@/lib/filters";
-import { CHANNEL_LABEL, fmtDateTime, fmtPeriod } from "@/lib/format";
+import { CHANNEL_LABEL, fmtDateTime, fmtPeriod, webUrl } from "@/lib/format";
 import { useMe, useProjectId } from "@/lib/project";
 import type { Insight, InsightSummary, Trend } from "@/lib/types";
 
@@ -52,8 +52,8 @@ function InsightBody({ insight }: { insight: Insight }) {
                   </span>{" "}
                   <SentimentChip s={s.sentiment} />
                   <span className="mt-0.5 block break-words">
-                    {s.url ? (
-                      <a href={s.url} target="_blank" rel="noreferrer noopener" className="hover:underline">
+                    {webUrl(s.url) ? (
+                      <a href={webUrl(s.url)!} target="_blank" rel="noreferrer noopener" className="hover:underline">
                         {s.text || "Open post"}
                       </a>
                     ) : (
