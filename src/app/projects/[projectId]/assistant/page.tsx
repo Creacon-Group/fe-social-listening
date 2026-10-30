@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
-import { Notice, PageHeader } from "@/components/ui";
+import { btnPrimary, Notice, PageHeader } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { CreditsExhausted, creditLine, useCredits } from "@/lib/credits";
 import { type Filters, filterBody, useFilters } from "@/lib/filters";
@@ -61,7 +61,6 @@ function ChatPane({
 }) {
   const { filters } = useFilters();
   const [input, setInput] = useState("");
-  const endRef = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(
     () =>
@@ -101,11 +100,6 @@ function ChatPane({
     }
   }, [firstMessage, sendMessage, filters]);
 
-  // Braces matter: newer browsers return a Promise from scrollIntoView, and an effect may only return a cleanup.
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
-
   function submit(text: string) {
     const t = text.trim();
     if (!t || busy || outOfCredits) return;
@@ -113,19 +107,40 @@ function ChatPane({
     void sendMessage({ text: t }, { body: { filter: filterBody(filters) } });
   }
 
+  // Follow the answer while it streams, but only if the reader is already at the bottom:
+  // scrolling up to re-read must not be yanked back down by every new token.
+  const scroller = useRef<HTMLDivElement>(null);
+  const pinned = useRef(true);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && pinned.current) el.scrollTop = el.scrollHeight;
+  }, [messages, status]);
+
+  // Messages that were already there when the chat opened do not animate in.
+  const [seen] = useState(() => new Set(initial.map((m) => m.id)));
+
   return (
-    <div className="flex min-h-[60vh] flex-col rounded-[14px] bg-card">
-      <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-6" aria-live="polite">
+    <div className="flex h-[calc(100dvh-15rem)] min-h-[28rem] flex-col overflow-hidden rounded-[14px] bg-card md:h-[calc(100dvh-13rem)]">
+      <div
+        ref={scroller}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        }}
+        className="flex-1 space-y-6 overflow-y-auto overscroll-contain p-5 md:p-6"
+        aria-live="polite"
+      >
         {messages.length === 0 && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted">Ask about the mentions in this project. For example:</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="mx-auto max-w-xl space-y-4 pt-6 text-center">
+            <p className="t-headline">Ask about this project&apos;s mentions</p>
+            <p className="text-sm text-muted">Answers use the numbers behind the dashboard, for the filters you have on.</p>
+            <div className="flex flex-wrap justify-center gap-2 pt-1">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => submit(s)}
                   disabled={outOfCredits}
-                  className="rounded-[14px] px-3.5 py-2 text-left ring-1 ring-line ring-inset text-sm hover:ring-ink/40 disabled:opacity-40"
+                  className="rounded-xl bg-surface px-3.5 py-2 text-left text-sm hover:bg-line/60 disabled:opacity-40"
                 >
                   {s}
                 </button>
@@ -133,26 +148,47 @@ function ChatPane({
             </div>
           </div>
         )}
-        {messages.map((m) =>
-          m.role === "user" ? (
-            <div key={m.id} className="flex justify-end">
-              <p className="max-w-[80%] whitespace-pre-line rounded-lg rounded-br-sm bg-ink px-4 py-2.5 text-sm text-on-ink">
+        {messages.map((m) => {
+          const fresh = !seen.has(m.id);
+          return m.role === "user" ? (
+            <div key={m.id} className={`flex justify-end ${fresh ? "msg-enter" : ""}`}>
+              <p className="max-w-[80%] whitespace-pre-line rounded-[18px] rounded-br-md bg-ink px-4 py-2.5 text-[0.9375rem] leading-snug text-on-ink">
                 {m.parts.map((p) => (p.type === "text" ? p.text : "")).join("")}
               </p>
             </div>
           ) : (
-            <div key={m.id} className="max-w-[92%] space-y-2">
+            <div key={m.id} className={`max-w-[72ch] space-y-3 ${fresh ? "msg-enter" : ""}`}>
               {m.parts.map((p, i) => {
                 if (p.type === "text")
                   return (
-                    <div key={i} className="prose-chat text-sm leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{p.text}</ReactMarkdown>
+                    <div key={i} className="prose-chat text-[0.9375rem] leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          // Wide tables scroll inside the message instead of stretching the chat.
+                          table: ({ children }) => (
+                            <div className="-mx-1 overflow-x-auto px-1">
+                              <table>{children}</table>
+                            </div>
+                          ),
+                        }}
+                      >
+                        {p.text}
+                      </ReactMarkdown>
                     </div>
                   );
                 if (p.type.startsWith("tool-")) {
                   const name = p.type.slice(5);
+                  const done = "state" in p && (p.state === "output-available" || p.state === "output-error");
                   return (
-                    <p key={i} className="text-xs text-muted">
+                    <p key={i} className="t-caption flex items-center gap-2 text-muted">
+                      {done ? (
+                        <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 text-pos" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m2.5 6.5 2.2 2.2L9.5 3.5" />
+                        </svg>
+                      ) : (
+                        <span aria-hidden className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-muted/30 border-t-muted" />
+                      )}
                       {TOOL_LABEL[name] ?? name}
                     </p>
                   );
@@ -160,19 +196,27 @@ function ChatPane({
                 return null;
               })}
             </div>
-          ),
+          );
+        })}
+        {status === "submitted" && (
+          <p className="flex items-center gap-2 text-sm text-muted" role="status">
+            <span aria-hidden className="thinking-dots">
+              <span />
+              <span />
+              <span />
+            </span>
+            Thinking
+          </p>
         )}
-        {status === "submitted" && <p className="text-xs text-muted">Working on it…</p>}
         {error && !creditError && (
-          <p role="alert" className="text-sm text-neg">
-            {error.message.includes("503") || error.message.includes("dikonfigurasi")
+          <p role="alert" className="rounded-lg bg-neg/10 px-3 py-2 text-sm text-neg">
+            {error.message.includes("503") || error.message.includes("not configured")
               ? "The assistant isn't set up on the server yet (AI model settings)."
-              : error.message.includes("sibuk")
+              : /overloaded|high demand|rate limit/i.test(error.message)
                 ? "The AI model is busy right now. Wait a moment, then send the question again."
                 : "No answer came back. Send the question again."}
           </p>
         )}
-        <div ref={endRef} />
       </div>
 
       <form
@@ -180,45 +224,50 @@ function ChatPane({
           e.preventDefault();
           submit(input);
         }}
-        className="border-t border-line p-3 md:p-4"
+        className="border-t border-line p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-4"
       >
         {outOfCredits && credits && (
           <div className="mb-3">
             <CreditsExhausted credits={credits} />
           </div>
         )}
-        <p className="mb-2 text-xs text-muted">Using the filters above: {describeFilter(filters)}.</p>
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 rounded-[20px] bg-surface p-1.5 pl-4 ring-1 ring-line ring-inset focus-within:ring-2 focus-within:ring-accent">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 submit(input);
               }
             }}
-            rows={2}
+            rows={1}
             maxLength={2000}
             disabled={outOfCredits}
             placeholder={outOfCredits ? "No credits left today" : "Ask a question"}
             aria-label="Question for the brand assistant"
-            className="flex-1 resize-none rounded-[14px] bg-surface px-3.5 ring-1 ring-line ring-inset py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
+            className="composer max-h-40 min-h-9 flex-1 resize-none bg-transparent py-2 text-[0.9375rem] leading-snug outline-none [field-sizing:content] placeholder:text-muted"
           />
           {busy ? (
-            <button type="button" onClick={() => stop()} className="rounded-lg px-4 py-2.5 text-sm ring-1 ring-line ring-inset font-semibold">
-              Stop
+            <button type="button" onClick={() => stop()} aria-label="Stop the answer" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-on-ink">
+              <span aria-hidden className="h-2.5 w-2.5 rounded-[2px] bg-current" />
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || outOfCredits} className="rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink disabled:opacity-40">
-              Send
+            <button
+              type="submit"
+              disabled={!input.trim() || outOfCredits}
+              aria-label="Send"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-on-ink disabled:opacity-30"
+            >
+              <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
+              </svg>
             </button>
           )}
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="t-caption mt-2 px-1 text-muted">
           {credits && <span className="font-semibold text-ink">{creditLine(credits)} </span>}
-          Each answered question uses one credit. Answers are written by AI from the uploaded data, so check key numbers on
-          the Competitors page before you use them.
+          Filters: {describeFilter(filters)}. Written by AI from the uploaded data, so check key numbers before you use them.
         </p>
       </form>
     </div>
@@ -282,10 +331,11 @@ export default function AssistantPage() {
       <PageHeader title="Brand assistant" detail="Answers come from this project&apos;s social listening data" />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[16rem_1fr]">
         <aside className="space-y-2">
-          <button onClick={newChat} className="w-full rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink">
+          <button onClick={newChat} className={`${btnPrimary} w-full`}>
             New chat
           </button>
-          <ul className="space-y-1">
+          {/* Phones: a short scrolling list so the conversation stays on the first screen. */}
+          <ul className="max-h-40 space-y-1 overflow-y-auto overscroll-contain lg:max-h-[calc(100dvh-17rem)]" aria-label="Earlier chats">
             {(sessions ?? []).filter((s) => s.id !== deleted?.id).map((s) => (
               <li key={s.id} className="group flex items-center gap-1">
                 <button

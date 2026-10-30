@@ -25,6 +25,9 @@
   --scrim: rgb(0 0 0 / 0.32);
   --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.14);
   --material: rgb(242 242 240 / 0.72);
+  /* Motion: strong ease-out for things responding to the user, drawer curve for sheets. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --material-thick: rgb(255 255 255 / 0.82);
 }
 
@@ -68,6 +71,8 @@
 /* 100%: respect the reader's own text-size setting; everything below is in rem. */
 html {
   font-size: 100%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   background: var(--surface);
   color: var(--ink);
 }
@@ -79,6 +84,26 @@ body {
   letter-spacing: -0.006em;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headings never leave one word alone on the last line; paragraphs avoid short last lines. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p,
+li {
+  text-wrap: pretty;
+}
+
+/* iOS zooms into any field under 16px when it gets focus; phones get 16px fields. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /*
@@ -146,7 +171,7 @@ body {
 }
 /* Scroll edge: a soft shadow appears under the toolbar only once content is underneath it. */
 .scroll-edge {
-  transition: box-shadow 200ms ease;
+  transition: box-shadow 200ms var(--ease-out);
 }
 .scroll-edge[data-scrolled="true"] {
   box-shadow: 0 1px 0 var(--line), 0 8px 16px -12px rgb(0 0 0 / 0.25);
@@ -155,8 +180,9 @@ body {
 /* Press feedback on pointer-down, instant; it eases back on release. */
 button:not(:disabled),
 .pressable {
-  transition: transform 180ms ease-out;
-  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms var(--ease-out);
+  -webkit-user-select: none;
+  user-select: none;
 }
 button:not(:disabled):active,
 .pressable:active {
@@ -166,16 +192,22 @@ button:not(:disabled):active,
 
 /* Content dims while new numbers load, so a filter change visibly "takes". */
 .busy-fade {
-  transition: opacity 180ms ease;
+  transition: opacity 180ms var(--ease-out);
 }
 .busy-fade[data-busy="true"] {
   opacity: 0.55;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 6px;
+/* In the base layer, so a component can replace the ring with its own (utilities win). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+/* The composer shows focus on its whole pill, not on the bare textarea inside it. */
+.composer:focus-visible {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -218,6 +250,46 @@ button:not(:disabled):active,
   }
 }
 
+/* Assistant: a new message rises into place; history does not animate. */
+.msg-enter {
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out);
+  @starting-style {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* "Thinking" dots: a slow, staggered fade. Reduced motion stops it (see the rule above). */
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.thinking-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: thinking 1.2s var(--ease-out) infinite;
+}
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes thinking {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
 /* Markdown answers from the assistant */
 .prose-chat > * + * {
   margin-top: 0.6rem;
@@ -237,8 +309,22 @@ button:not(:disabled):active,
 .prose-chat th,
 .prose-chat td {
   border-bottom: 1px solid var(--line);
-  padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.6rem;
   text-align: left;
+  white-space: nowrap;
+}
+.prose-chat td:not(:first-child),
+.prose-chat th:not(:first-child) {
+  text-align: right;
+}
+.prose-chat tr:last-child td {
+  border-bottom: 0;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-size: 1rem;
+  margin-top: 1rem;
 }
 .prose-chat th {
   color: var(--muted);

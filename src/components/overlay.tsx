@@ -10,6 +10,8 @@ import { createPortal } from "react-dom";
  * from dragging to animating has no seam. Exit paths mirror entry paths.
  */
 export const SPRING = { type: "spring", bounce: 0, duration: 0.35 } as const;
+/** Leaving is quicker than arriving: the user has already decided. */
+const EXIT = { type: "spring", bounce: 0, duration: 0.25 } as const; // a spring keeps the velocity of a drag-to-dismiss
 
 /** Apple's momentum projection: where a release at this velocity (px/s) would come to rest. */
 const project = (velocity: number, rate = 0.998) => ((velocity / 1000) * rate) / (1 - rate);
@@ -62,7 +64,7 @@ function Scrim({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-40 bg-[var(--scrim)]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
       transition={{ duration: 0.2 }}
     />
   );
@@ -115,7 +117,7 @@ export function Sheet({
                 tabIndex={-1}
                 initial={hidden}
                 animate={shown}
-                exit={hidden}
+                exit={{ ...hidden, transition: reduce ? { duration: 0.12 } : EXIT }}
                 transition={reduce ? { duration: 0.15 } : SPRING}
                 drag={desktop || reduce ? false : "y"}
                 dragConstraints={{ top: 0, bottom: 0 }}
@@ -132,7 +134,7 @@ export function Sheet({
                     Close
                   </button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
                 {footer && <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
               </motion.div>
             </div>
@@ -179,13 +181,13 @@ export function Drawer({
               tabIndex={-1}
               initial={hidden}
               animate={reduce ? { opacity: 1 } : { x: 0 }}
-              exit={hidden}
+              exit={{ ...hidden, transition: reduce ? { duration: 0.12 } : EXIT }}
               transition={reduce ? { duration: 0.15 } : SPRING}
               drag={reduce ? false : "x"}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={{ left: 0.9, right: 0.05 }}
               onDragEnd={onDragEnd}
-              className="material-thick fixed inset-y-0 left-0 z-50 flex w-[min(20rem,86vw)] flex-col overflow-y-auto px-4 pb-[env(safe-area-inset-bottom)] pt-[max(1rem,env(safe-area-inset-top))] outline-none"
+              className="material-thick fixed inset-y-0 left-0 z-50 flex w-[min(20rem,86vw)] flex-col overflow-y-auto overscroll-contain px-4 pb-[env(safe-area-inset-bottom)] pt-[max(1rem,env(safe-area-inset-top))] outline-none"
             >
               {children}
             </motion.div>
@@ -261,8 +263,8 @@ export function Popover({
             style={{ ...pos, transformOrigin: align === "start" ? "top left" : "top right" }}
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
             animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
-            transition={reduce ? { duration: 0.12 } : { type: "spring", bounce: 0, duration: 0.28 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, transition: { duration: 0.12, ease: [0.23, 1, 0.32, 1] } }}
+            transition={reduce ? { duration: 0.12 } : { type: "spring", bounce: 0, duration: 0.22 }}
             className="material-thick fixed z-50 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl p-4 outline-none"
           >
             {children}

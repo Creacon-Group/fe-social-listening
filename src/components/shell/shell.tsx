@@ -45,7 +45,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <div className="min-w-0 flex-1">
         {/* One floating, translucent layer: phone top bar plus the filters. Content scrolls under it. */}
-        <div data-scrolled={scrolled} className="material scroll-edge sticky top-0 z-30 px-4 md:px-8">
+        <div data-scrolled={scrolled} className="material scroll-edge sticky top-0 z-30 px-4 pt-[env(safe-area-inset-top)] md:px-8">
           <div className="flex min-h-12 items-center gap-2 md:hidden">
             <button
               type="button"
