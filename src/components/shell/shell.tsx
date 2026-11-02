@@ -45,7 +45,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <div className="min-w-0 flex-1">
         {/* One floating, translucent layer: phone top bar plus the filters. Content scrolls under it. */}
-        <div data-scrolled={scrolled} className="material scroll-edge sticky top-0 z-30 px-4 pt-[env(safe-area-inset-top)] md:px-8">
+        <div data-scrolled={scrolled} className={`toolbar sticky top-0 z-30 px-4 pt-[env(safe-area-inset-top)] md:top-3 md:mx-5 md:mt-3 md:rounded-[22px] md:px-3 ${showFilters ? "" : "md:hidden"}`}>
           <div className="flex min-h-12 items-center gap-2 md:hidden">
             <button
               type="button"
@@ -66,13 +66,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="ml-auto">{showFilters && <Status />}</span>
           </div>
           {showFilters && (
-            <div className="pb-3 md:py-3">
+            <div className="pb-3 md:py-2.5">
               <FilterBar projectId={projectId} />
             </div>
           )}
         </div>
 
-        <main data-busy={busy && showFilters} className="busy-fade space-y-5 px-4 pb-10 pt-4 md:px-8 md:pt-5">
+        <main data-busy={busy && showFilters} className="busy-fade space-y-5 px-4 pb-10 pt-4 md:px-8 md:pt-4">
           {children}
         </main>
       </div>
