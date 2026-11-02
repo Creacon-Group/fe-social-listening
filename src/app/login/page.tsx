@@ -20,8 +20,8 @@ function safeNext(next: string | null) {
 }
 
 const TECH_EMAIL = "tech@creacon.id";
-const TERMS_URL = "https://connect-demo.creacon.id/terms-of-service";
-const PRIVACY_URL = "https://connect-demo.creacon.id/privacy-policy";
+const TERMS_URL = "/terms-of-service";
+const PRIVACY_URL = "/privacy-policy";
 
 function EyeIcon({ open }: { open: boolean }) {
   return (
