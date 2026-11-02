@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import { Popover, Sheet, useMedia } from "@/components/overlay";
-import { Segmented, ToggleChip } from "@/components/segmented";
+import { ChipGroup, Segmented } from "@/components/segmented";
 import { btnPrimary, btnQuiet } from "@/components/ui";
 import { useBusy } from "@/lib/busy";
 import { useFilters } from "@/lib/filters";
@@ -38,54 +38,47 @@ function FilterChoices() {
       {categories && categories.length > 0 && (
         <fieldset>
           <legend className="mb-2 text-sm font-semibold">Topic</legend>
-          <div className="flex flex-wrap gap-2">
-            <ToggleChip on={!filters.categories.length} onClick={() => setFilters({ categories: [] })}>
-              All topics
-            </ToggleChip>
-            {categories.map((c) => (
-              <ToggleChip
-                key={c.id}
-                on={filters.categories.includes(c.id)}
-                onClick={() => setFilters({ categories: toggle(filters.categories, c.id) })}
-              >
-                {c.name}
-              </ToggleChip>
-            ))}
-            <ToggleChip on={filters.categories.includes(0)} onClick={() => setFilters({ categories: toggle(filters.categories, 0) })}>
-              No topic
-            </ToggleChip>
-          </div>
+          <ChipGroup
+            items={[
+              { key: "all", label: "All topics", on: !filters.categories.length, onClick: () => setFilters({ categories: [] }) },
+              ...categories.map((c) => ({
+                key: `c${c.id}`,
+                label: c.name,
+                on: filters.categories.includes(c.id),
+                onClick: () => setFilters({ categories: toggle(filters.categories, c.id) }),
+              })),
+              { key: "c0", label: "No topic", on: filters.categories.includes(0), onClick: () => setFilters({ categories: toggle(filters.categories, 0) }) },
+            ]}
+          />
         </fieldset>
       )}
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Channel</legend>
-        <div className="flex flex-wrap gap-2">
-          <ToggleChip on={!filters.channels.length} onClick={() => setFilters({ channels: [] })}>
-            All channels
-          </ToggleChip>
-          {CHANNELS.map((c) => (
-            <ToggleChip key={c} on={filters.channels.includes(c)} onClick={() => setFilters({ channels: toggle(filters.channels, c) })}>
-              {CHANNEL_LABEL[c]}
-            </ToggleChip>
-          ))}
-        </div>
+        <ChipGroup
+          items={[
+            { key: "all", label: "All channels", on: !filters.channels.length, onClick: () => setFilters({ channels: [] }) },
+            ...CHANNELS.map((c) => ({
+              key: c,
+              label: CHANNEL_LABEL[c],
+              on: filters.channels.includes(c),
+              onClick: () => setFilters({ channels: toggle(filters.channels, c) }),
+            })),
+          ]}
+        />
       </fieldset>
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Sentiment</legend>
-        <div className="flex flex-wrap gap-2">
-          <ToggleChip on={!filters.sentiments.length} onClick={() => setFilters({ sentiments: [] })}>
-            All sentiment
-          </ToggleChip>
-          {SENTIMENTS.map((s) => (
-            <ToggleChip
-              key={s}
-              on={filters.sentiments.includes(s)}
-              onClick={() => setFilters({ sentiments: toggle(filters.sentiments, s) })}
-            >
-              {SENTIMENT_LABEL[s]}
-            </ToggleChip>
-          ))}
-        </div>
+        <ChipGroup
+          items={[
+            { key: "all", label: "All sentiment", on: !filters.sentiments.length, onClick: () => setFilters({ sentiments: [] }) },
+            ...SENTIMENTS.map((x) => ({
+              key: x,
+              label: SENTIMENT_LABEL[x],
+              on: filters.sentiments.includes(x),
+              onClick: () => setFilters({ sentiments: toggle(filters.sentiments, x) }),
+            })),
+          ]}
+        />
       </fieldset>
     </div>
   );

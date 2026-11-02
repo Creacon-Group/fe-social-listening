@@ -241,13 +241,14 @@ li {
 }
 
 /* Press feedback on pointer-down, instant; it eases back on release. */
-button:not(:disabled),
+button:not(:disabled):not([data-segment]),
 .pressable {
   transition: transform 160ms var(--ease-out);
   -webkit-user-select: none;
   user-select: none;
 }
-button:not(:disabled):active,
+/* Segments and chips skip this: their sliding capsule handles feedback (see segmented.tsx). */
+button:not(:disabled):not([data-segment]):active,
 .pressable:active {
   transform: scale(0.97);
   transition-duration: 80ms;
