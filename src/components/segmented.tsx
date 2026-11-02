@@ -27,7 +27,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="inline-flex rounded-[10px] bg-line/70 p-0.5"
+      className="inline-flex rounded-full bg-line/60 p-0.5 ring-1 ring-inset ring-line"
       onKeyDown={(e) => {
         // Arrow keys move the selection, as in a native radio group.
         const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -50,7 +50,7 @@ export function Segmented<T extends string>({
             aria-checked={active}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(o.value)}
-            className={`relative whitespace-nowrap rounded-lg font-semibold ${size === "sm" ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3 text-[0.8125rem]"} ${
+            className={`relative whitespace-nowrap rounded-full font-semibold ${size === "sm" ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3 text-[0.8125rem]"} ${
               active ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
@@ -58,7 +58,7 @@ export function Segmented<T extends string>({
               <motion.span
                 layoutId={`seg-${id}`}
                 transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.32 }}
-                className="absolute inset-0 rounded-lg bg-card shadow-[0_1px_2px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]"
+                className="absolute inset-0 rounded-full bg-card shadow-[0_1px_2px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]"
               />
             )}
             <span className="relative">{o.label}</span>

@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
+const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space", weight: ["400", "500", "700"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Social Listening",
@@ -16,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${outfit.variable} ${space.variable}`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

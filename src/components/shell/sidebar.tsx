@@ -106,7 +106,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
       <nav aria-label="Menu" className="mt-5 space-y-4">
         {groups.map((g) => (
           <div key={g.group}>
-            <p className="t-caption mb-1 px-2.5 font-medium text-muted">{g.group}</p>
+            <p className="t-label mb-1.5 px-2.5 text-muted">{g.group}</p>
             <ul className="flex flex-col gap-0.5">
               {g.items.map((item) => {
                 const href = `/projects/${projectId}/${item.slug}`;
@@ -117,8 +117,8 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
                       href={item.keepFilters && query ? `${href}?${query}` : href}
                       onClick={onNavigate}
                       aria-current={active ? "page" : undefined}
-                      className={`pressable flex min-h-10 items-center rounded-lg px-2.5 text-sm md:min-h-9 ${
-                        active ? "bg-accent-soft font-semibold text-accent" : "text-ink/80 hover:bg-line/50 hover:text-ink"
+                      className={`pressable flex min-h-10 items-center rounded-full px-3 text-sm md:min-h-9 ${
+                        active ? "bg-accent-soft font-semibold text-accent" : "text-ink/80 hover:bg-white/50 hover:text-ink dark:hover:bg-white/5"
                       }`}
                     >
                       {item.label}
@@ -144,7 +144,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
 
 export function Sidebar({ projectId }: { projectId: number }) {
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-line px-3 py-6 md:flex">
+    <aside className="glass sticky top-3 m-3 mr-0 hidden h-[calc(100vh-1.5rem)] w-60 shrink-0 flex-col overflow-y-auto rounded-[22px] px-3 py-6 md:flex">
       <NavContent projectId={projectId} />
     </aside>
   );

@@ -159,7 +159,7 @@ export default function UploadPage() {
       ) : (
         <Panel>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex-1 cursor-pointer rounded-[14px] border-2 border-dashed border-line px-5 py-8 text-center text-sm hover:ring-ink/40">
+            <label className="flex-1 cursor-pointer rounded-[18px] border-2 border-dashed bg-[var(--glass)] border-line px-5 py-8 text-center text-sm hover:ring-ink/40">
               <input
                 ref={inputRef}
                 type="file"

@@ -120,7 +120,7 @@ function ChatPane({
   const [seen] = useState(() => new Set(initial.map((m) => m.id)));
 
   return (
-    <div className="flex h-[calc(100dvh-15rem)] min-h-[28rem] flex-col overflow-hidden rounded-[14px] bg-card md:h-[calc(100dvh-13rem)]">
+    <div className="flex h-[calc(100dvh-15rem)] min-h-[28rem] flex-col glass overflow-hidden rounded-[18px] md:h-[calc(100dvh-13rem)]">
       <div
         ref={scroller}
         onScroll={(e) => {
@@ -372,7 +372,7 @@ export default function AssistantPage() {
         </aside>
 
         {!activeId ? (
-          <div className="space-y-4 rounded-[14px] bg-card p-6">
+          <div className="glass space-y-4 rounded-[18px] p-6">
             {outOfCredits && credits && <CreditsExhausted credits={credits} />}
             <p className="text-sm text-muted">Start a new chat or pick an earlier one.</p>
             {credits && <p className="text-xs text-muted">{creditLine(credits)}</p>}
@@ -386,7 +386,7 @@ export default function AssistantPage() {
                     setActiveId(created.id);
                   }}
                   disabled={outOfCredits}
-                  className="rounded-[14px] px-3.5 py-2 text-left ring-1 ring-line ring-inset text-sm hover:ring-ink/40 disabled:opacity-40"
+                  className="rounded-full px-3.5 py-2 text-left ring-1 ring-line ring-inset text-sm hover:ring-ink/40 disabled:opacity-40"
                 >
                   {s}
                 </button>

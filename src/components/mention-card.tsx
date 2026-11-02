@@ -82,7 +82,7 @@ export function MentionCard({ m }: { m: Mention }) {
   const hasParent = isComment && (m.title || m.preview.where);
 
   return (
-    <article className="rounded-[14px] bg-card p-4 md:p-5">
+    <article className="glass rounded-[18px] p-4 md:p-5">
       <header className="flex items-start gap-3">
         <span
           aria-hidden
