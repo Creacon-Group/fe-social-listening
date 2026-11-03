@@ -40,7 +40,7 @@ export function Panel({
       {(title || aside) && (
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           {title && <h2 className="t-headline">{title}</h2>}
-          {aside && <div className="text-xs text-muted">{aside}</div>}
+          {aside && <div className="min-w-0 max-w-full text-xs text-muted">{aside}</div>}
         </div>
       )}
       {children}
