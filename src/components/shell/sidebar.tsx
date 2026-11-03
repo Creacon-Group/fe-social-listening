@@ -10,31 +10,33 @@ import type { Project } from "@/lib/types";
 
 type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean };
 
-/** Grouped the way the project brief groups modules: monitor, analyze, AI, reports. */
+/**
+ * Order follows how clients read the dashboard: quick stats first (Summary, then AI Insights),
+ * then where (channels), what (topics, campaigns) and versus whom (competitive insights).
+ */
 export const NAV: { group: string; items: NavItem[] }[] = [
   {
-    group: "Monitor",
+    group: "Overview",
     items: [
       { slug: "overview", label: "Summary", keepFilters: true },
-      { slug: "mentions", label: "Mentions", keepFilters: true },
-      { slug: "competitors", label: "Competitors", keepFilters: true },
+      { slug: "insights", label: "AI insights", keepFilters: true },
     ],
   },
   {
     group: "Analyze",
     items: [
-      { slug: "demographics", label: "Demographics", keepFilters: true },
+      { slug: "channels", label: "Channel analysis", keepFilters: true },
+      { slug: "topics", label: "Topics & tagging", keepFilters: true },
+      { slug: "competitors", label: "Competitive insights", keepFilters: true },
       { slug: "influencers", label: "Influencers & sources", keepFilters: true },
-      { slug: "topics", label: "Topics", keepFilters: true },
-      { slug: "hashtags", label: "Hashtags", keepFilters: true },
+      { slug: "demographics", label: "Audience & timing", keepFilters: true },
+      { slug: "hashtags", label: "Hashtags & keywords", keepFilters: true },
+      { slug: "mentions", label: "Mentions", keepFilters: true },
     ],
   },
   {
     group: "AI",
-    items: [
-      { slug: "insights", label: "Insights", keepFilters: true },
-      { slug: "assistant", label: "Brand assistant", keepFilters: true },
-    ],
+    items: [{ slug: "assistant", label: "Brand assistant", keepFilters: true }],
   },
   {
     group: "Reports",
@@ -45,6 +47,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { slug: "upload", label: "Upload data", keepFilters: false },
       { slug: "categories", label: "Topic categories", keepFilters: false },
+      { slug: "settings", label: "Project settings", keepFilters: false },
       { slug: "credits", label: "Assistant credits", keepFilters: false, superadminOnly: true },
     ],
   },

@@ -2,7 +2,11 @@
 
 export type Channel = "X" | "TIKTOK" | "INSTAGRAM" | "ONLINE_NEWS" | "FACEBOOK" | "YOUTUBE" | "BLOG";
 export type Sentiment = "POSITIVE" | "NEUTRAL" | "NEGATIVE";
-export type RangePreset = "today" | "7d" | "30d" | "custom";
+export type RangePreset = "today" | "7d" | "30d" | "90d" | "365d" | "custom";
+export type Voice = "owned" | "earned";
+export type PaidFilter = "paid" | "organic";
+export type Interval = "hour" | "day" | "week" | "month" | "quarter" | "year";
+export type AccountType = "KOL" | "MEDIA" | "OFFICIAL" | "OTHER";
 export type Role = "SUPERADMIN" | "ADMIN" | "ANALYST" | "VIEWER";
 
 export interface User {
@@ -60,27 +64,102 @@ export interface Counts {
   netSentiment: number;
 }
 
-export interface Overview extends Counts {
-  period: Period;
+export interface OwnedEarnedPart {
+  total: number;
   engagements: number;
   reach: number;
+}
+
+export interface Overview extends Counts {
+  period: Period;
+  previousPeriod: Period;
+  engagements: number;
+  reach: number;
+  previous: Counts & { engagements: number; reach: number };
+  /** % change vs the previous period (null when the previous period was zero); netSentiment in points. */
+  growth: {
+    total: number | null;
+    positive: number | null;
+    neutral: number | null;
+    negative: number | null;
+    engagements: number | null;
+    reach: number | null;
+    netSentiment: number | null;
+  };
+  engagementBreakdown: {
+    likes: number;
+    comments: number;
+    shares: number;
+    views: number;
+    bookmarks: number;
+    reactions: { love: number; wow: number; haha: number; sad: number; angry: number; favorites: number };
+  };
+  ownedEarned: { owned: OwnedEarnedPart; earned: OwnedEarnedPart };
   channels: (Counts & { channel: Channel })[];
+}
+
+export interface ChannelStat extends Counts {
+  channel: Channel;
+  engagements: number;
+  reach: number;
+  views: number;
+  owned: number;
+  earned: number;
+  engagementPerMention: number;
+  share: number;
+}
+export interface Channels {
+  period: Period;
+  total: number;
+  engagements: number;
+  reach: number;
+  engagementPerMention: number;
+  channels: ChannelStat[];
+}
+
+export interface Heatmap {
+  period: Period;
+  cells: { dow: number; hour: number; total: number; engagements: number }[];
+  peak: { dow: number; hour: number; total: number; engagements: number } | null;
+}
+
+export interface KeywordStat extends Counts {
+  keyword: string;
+  engagements: number;
+  reach: number;
+  share: number;
+}
+export interface Keywords {
+  period: Period;
+  mentionsWithKeyword: number;
+  keywords: KeywordStat[];
+}
+
+export interface ProjectSettings {
+  nssIncludeNeutral: boolean;
+  showNss: boolean;
 }
 
 export interface BrandStat extends Counts {
   brandId: number;
   name: string;
   isOwn: boolean;
+  engagements: number;
+  reach: number;
   sov: number;
+  engagementShare: number;
+  reachShare: number;
   ratioToOwn: number | null;
 }
 
 export interface Competitors {
   period: Period;
+  interval: Interval;
+  buckets: string[];
   totalBrandMentions: number;
   own: Counts & { sov: number };
   brands: BrandStat[];
-  trend: (Counts & { day: string; brandId: number })[];
+  trend: (Counts & { day: string; brandId: number; engagements: number; reach: number })[];
 }
 
 export interface Mention {
@@ -158,6 +237,8 @@ export interface TrendDay extends Counts {
 }
 export interface Trend {
   period: Period;
+  interval: Interval;
+  /** One item per bucket; `day` is the bucket key (e.g. "2026-09-24", "2026-09-24 13:00", "2026-09", "2026-Q3"). */
   days: TrendDay[];
 }
 
@@ -168,6 +249,11 @@ export interface Influencer extends Counts {
   followers: number;
   verified: boolean;
   userLink: string | null;
+  accountType: AccountType;
+  /** manual = set by an analyst; zanroo = derived from Zanroo tags and channel. */
+  typeSource: "manual" | "zanroo";
+  tier: string | null;
+  isPaid: boolean | null;
   netSentiment: number;
   reach: number;
   engagements: number;

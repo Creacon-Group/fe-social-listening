@@ -1,15 +1,17 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
 import { Popover, Sheet, useMedia } from "@/components/overlay";
 import { ChipGroup, Segmented } from "@/components/segmented";
-import { btnPrimary, btnQuiet } from "@/components/ui";
+import { btnPrimary, btnQuiet, inputBase } from "@/components/ui";
+import { fetcher } from "@/lib/api";
 import { useBusy } from "@/lib/busy";
-import { useFilters } from "@/lib/filters";
+import { filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmtDay, SENTIMENT_LABEL } from "@/lib/format";
 import { useCategories, useDataAsOf, useProjectId } from "@/lib/project";
-import type { Channel, RangePreset, Sentiment } from "@/lib/types";
+import type { Channel, Keywords, RangePreset, Sentiment } from "@/lib/types";
 
 const CHANNELS: Channel[] = ["X", "TIKTOK", "INSTAGRAM", "ONLINE_NEWS", "FACEBOOK", "YOUTUBE"];
 const SENTIMENTS: Sentiment[] = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
@@ -29,12 +31,66 @@ function SlidersIcon() {
   );
 }
 
+/** Zanroo keywords in the period (brand, product and campaign keywords), searchable. */
+function KeywordChoices() {
+  const projectId = useProjectId();
+  const { filters, setFilters } = useFilters();
+  const [find, setFind] = useState("");
+  const { data } = useSWR<Keywords>(
+    `/api/projects/${projectId}/analytics/keywords?${filterQuery({ ...filters, keywords: [] })}`,
+    fetcher,
+    { keepPreviousData: true },
+  );
+  const shown = useMemo(() => {
+    const all = data?.keywords ?? [];
+    const term = find.trim().toLowerCase();
+    const hits = term ? all.filter((k) => k.keyword.toLowerCase().includes(term)) : all.slice(0, 16);
+    const picked = filters.keywords.filter((k) => !hits.some((h) => h.keyword === k));
+    return [...picked.map((keyword) => ({ keyword, total: 0 })), ...hits.slice(0, 24)];
+  }, [data, find, filters.keywords]);
+  if (!data?.keywords.length && !filters.keywords.length) return null;
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold">Keyword or campaign</legend>
+      <input
+        type="search"
+        value={find}
+        onChange={(e) => setFind(e.target.value)}
+        placeholder="Find a keyword, e.g. Activation"
+        aria-label="Find a keyword"
+        className={`${inputBase} mb-2 w-full`}
+      />
+      <ChipGroup
+        items={[
+          { key: "all", label: "All keywords", on: !filters.keywords.length, onClick: () => setFilters({ keywords: [] }) },
+          ...shown.map((k) => ({
+            key: `k:${k.keyword}`,
+            label: k.total ? `${k.keyword} (${k.total.toLocaleString("en-GB")})` : k.keyword,
+            on: filters.keywords.includes(k.keyword),
+            onClick: () => setFilters({ keywords: toggle(filters.keywords, k.keyword) }),
+          })),
+        ]}
+      />
+    </fieldset>
+  );
+}
+
 /** Channel and sentiment choices. The same content goes in the desktop popover and the phone sheet. */
 function FilterChoices() {
   const { filters, setFilters } = useFilters();
   const { data: categories } = useCategories(useProjectId());
   return (
     <div className="space-y-5">
+      <fieldset>
+        <legend className="mb-2 text-sm font-semibold">Owned or earned</legend>
+        <ChipGroup
+          items={[
+            { key: "all", label: "All posts", on: !filters.voice, onClick: () => setFilters({ voice: undefined }) },
+            { key: "owned", label: "Owned (brand accounts)", on: filters.voice === "owned", onClick: () => setFilters({ voice: "owned" }) },
+            { key: "earned", label: "Earned (public, media, KOL)", on: filters.voice === "earned", onClick: () => setFilters({ voice: "earned" }) },
+          ]}
+        />
+      </fieldset>
       {categories && categories.length > 0 && (
         <fieldset>
           <legend className="mb-2 text-sm font-semibold">Topic</legend>
@@ -80,6 +136,18 @@ function FilterChoices() {
           ]}
         />
       </fieldset>
+      <fieldset>
+        <legend className="mb-2 text-sm font-semibold">Paid or organic</legend>
+        <ChipGroup
+          items={[
+            { key: "all", label: "All authors", on: !filters.paid, onClick: () => setFilters({ paid: undefined }) },
+            { key: "paid", label: "Paid", on: filters.paid === "paid", onClick: () => setFilters({ paid: "paid" }) },
+            { key: "organic", label: "Organic", on: filters.paid === "organic", onClick: () => setFilters({ paid: "organic" }) },
+          ]}
+        />
+        <p className="mt-1.5 text-xs text-muted">Paid accounts are marked on the Influencers page.</p>
+      </fieldset>
+      <KeywordChoices />
     </div>
   );
 }
@@ -141,7 +209,14 @@ export function FilterBar({ projectId }: { projectId: number }) {
 
   const { data: categories } = useCategories(projectId);
   const categoryName = (id: number) => (id === 0 ? "No topic" : (categories?.find((c) => c.id === id)?.name ?? "Topic"));
-  const count = filters.channels.length + filters.sentiments.length + filters.categories.length;
+  const count =
+    filters.channels.length +
+    filters.sentiments.length +
+    filters.categories.length +
+    filters.keywords.length +
+    (filters.voice ? 1 : 0) +
+    (filters.paid ? 1 : 0);
+  const cleared = { channels: [], sentiments: [], categories: [], keywords: [], voice: undefined, paid: undefined };
   const setRange = (range: RangePreset) => {
     if (range !== "custom") return setFilters({ range });
     setFilters({
@@ -153,6 +228,7 @@ export function FilterBar({ projectId }: { projectId: number }) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="-mx-1 max-w-full overflow-x-auto px-1 py-0.5">
       <Segmented
         label="Period"
         value={filters.range}
@@ -161,9 +237,12 @@ export function FilterBar({ projectId }: { projectId: number }) {
           { value: "today", label: desktop && asOf ? `Latest day, ${fmtDay(asOf)}` : "Day" },
           { value: "7d", label: "7 days" },
           { value: "30d", label: "30 days" },
+          { value: "90d", label: desktop ? "90 days" : "90d" },
+          { value: "365d", label: desktop ? "1 year" : "1y" },
           { value: "custom", label: "Custom" },
         ]}
       />
+      </div>
 
       {filters.range === "custom" && (
         <span className="flex items-center gap-1.5 text-xs">
@@ -213,6 +292,19 @@ export function FilterBar({ projectId }: { projectId: number }) {
                 onRemove={() => setFilters({ categories: toggle(filters.categories, id) })}
               />
             ))}
+            {filters.voice && (
+              <ActiveChip
+                key="voice"
+                label={filters.voice === "owned" ? "Owned" : "Earned"}
+                onRemove={() => setFilters({ voice: undefined })}
+              />
+            )}
+            {filters.paid && (
+              <ActiveChip key="paid" label={filters.paid === "paid" ? "Paid" : "Organic"} onRemove={() => setFilters({ paid: undefined })} />
+            )}
+            {filters.keywords.map((k) => (
+              <ActiveChip key={`kw-${k}`} label={k} onRemove={() => setFilters({ keywords: toggle(filters.keywords, k) })} />
+            ))}
             {filters.sentiments.map((s) => (
               <ActiveChip
                 key={s}
@@ -236,7 +328,7 @@ export function FilterBar({ projectId }: { projectId: number }) {
           {count > 0 && (
             <button
               type="button"
-              onClick={() => setFilters({ channels: [], sentiments: [], categories: [] })}
+              onClick={() => setFilters(cleared)}
               className="mt-4 text-sm font-semibold text-muted hover:text-ink"
             >
               Clear filters
@@ -250,7 +342,7 @@ export function FilterBar({ projectId }: { projectId: number }) {
           title="Filters"
           footer={
             <>
-              <button type="button" onClick={() => setFilters({ channels: [], sentiments: [], categories: [] })} disabled={!count} className={btnQuiet}>
+              <button type="button" onClick={() => setFilters(cleared)} disabled={!count} className={btnQuiet}>
                 Clear
               </button>
               <button type="button" onClick={close} className={btnPrimary} data-autofocus>

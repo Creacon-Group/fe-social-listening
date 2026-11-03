@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { MentionCard } from "@/components/mention-card";
@@ -18,7 +19,8 @@ export default function MentionsPage() {
   const { filters } = useFilters();
   const { data: brands } = useBrands(projectId);
   const [brandId, setBrandId] = useState("");
-  const [sort, setSort] = useState("latest");
+  const initialSort = useSearchParams().get("sort"); // drill-down links pass ?sort=engagements
+  const [sort, setSort] = useState(initialSort === "engagements" || initialSort === "reach" ? initialSort : "latest");
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
