@@ -114,8 +114,11 @@ export function GeoPromptsTab({ projectId, canEdit }: { projectId: number; canEd
     setBusy("suggest");
     setMessage(null);
     try {
-      const r = await apiSend<{ created: number }>(`${key}/suggest`, "POST");
-      setMessage(`${r.created} draft prompts added. Review and approve the ones you want in the benchmark.`);
+      const r = await apiSend<{ created: number; skipped?: number }>(`${key}/suggest`, "POST");
+      setMessage(
+        `${r.created} draft prompts added. Review and approve the ones you want in the benchmark.` +
+          (r.skipped ? ` ${r.skipped} suggestions were not in the project language and were left out.` : ""),
+      );
       await mutate();
     } catch (e) {
       setMessage((e as Error).message);
