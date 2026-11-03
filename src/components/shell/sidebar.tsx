@@ -36,7 +36,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   },
   {
     group: "AI",
-    items: [{ slug: "assistant", label: "Brand assistant", keepFilters: true }],
+    items: [
+      { slug: "geo", label: "AI visibility", keepFilters: false },
+      { slug: "assistant", label: "Brand assistant", keepFilters: true },
+    ],
   },
   {
     group: "Reports",
