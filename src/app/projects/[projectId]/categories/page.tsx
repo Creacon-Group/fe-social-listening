@@ -76,7 +76,7 @@ function TagPicker({ projectId, value, onChange }: { projectId: number; value: s
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search Zanroo tags and categories"
+        placeholder="Search Zanroo tags, categories and keywords (e.g. Activation)"
         className={`${inputBase} w-full`}
       />
       <ul className="mt-2 max-h-56 divide-y divide-line overflow-y-auto rounded-lg ring-1 ring-line ring-inset">
@@ -91,7 +91,7 @@ function TagPicker({ projectId, value, onChange }: { projectId: number; value: s
                 <input type="checkbox" checked={value.includes(i.name)} onChange={() => toggle(i.name)} className="h-4 w-4 accent-[var(--ink)]" />
                 <span className="min-w-0 flex-1 truncate">{i.name}</span>
                 <span className="t-caption shrink-0 text-muted">
-                  {i.kind === "category" ? "Category" : "Tag"}, {fmt(i.count)}
+                  {i.kind === "category" ? "Category" : i.kind === "keyword" ? "Keyword" : "Tag"}, {fmt(i.count)}
                 </span>
               </label>
             </li>
@@ -161,8 +161,11 @@ function Editor({ projectId, initial, onDone }: { projectId: number; initial: Dr
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section>
-          <h3 className="text-sm font-semibold">From Zanroo tags</h3>
-          <p className="mb-2 mt-0.5 text-xs text-muted">Mentions Zanroo already tagged with any of these join the topic.</p>
+          <h3 className="text-sm font-semibold">From Zanroo tags and keywords</h3>
+          <p className="mb-2 mt-0.5 text-xs text-muted">
+            Mentions Zanroo tagged with any of these, or collected under one of these keywords (for example a campaign keyword), join the
+            topic.
+          </p>
           <TagPicker projectId={projectId} value={d.zanrooTags} onChange={(zanrooTags) => setD({ ...d, zanrooTags })} />
         </section>
         <section>
