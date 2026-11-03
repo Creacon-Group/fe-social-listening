@@ -1,4 +1,4 @@
-import type { Channel, Sentiment } from "./types";
+import type { AccountType, Channel, Sentiment } from "./types";
 
 const nf = new Intl.NumberFormat("en-GB");
 const compact = new Intl.NumberFormat("en-GB", { notation: "compact", maximumFractionDigits: 1 });
@@ -50,3 +50,10 @@ export const SENTIMENT_COLOR: Record<Sentiment, string> = {
 
 /** Links from mention data (Excel, Zanroo): only http(s) is rendered, so javascript:/data: URLs can't run. */
 export const webUrl = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : null);
+
+export const TYPE_LABEL: Record<AccountType, string> = {
+  KOL: "KOL",
+  MEDIA: "Media",
+  OFFICIAL: "Official",
+  OTHER: "Public",
+};

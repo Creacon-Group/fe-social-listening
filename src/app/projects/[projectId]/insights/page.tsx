@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { TrendCharts } from "@/components/trend-charts";
+import { ComboChart } from "@/components/trend-charts";
 import { btnPrimary, Notice, PageHeader, Panel, SentimentChip, Skeleton } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { filterBody, filterQuery, useFilters } from "@/lib/filters";
@@ -108,7 +108,7 @@ export default function InsightsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Insights" detail={period ? fmtPeriod(period) : undefined} />
+      <PageHeader title="AI insights" detail={period ? fmtPeriod(period) : undefined} />
 
       {canGenerate && (
         <div className="flex flex-wrap items-center gap-3">
@@ -142,7 +142,11 @@ export default function InsightsPage() {
 
         <div className="space-y-5">
           <Panel title="Mentions and reach">
-            {trend.data ? <TrendCharts days={trend.data.days} stacked /> : <Skeleton className="h-96" />}
+            {trend.data ? (
+              <ComboChart days={trend.data.days} interval={trend.data.interval} secondary="reach" height="h-64" />
+            ) : (
+              <Skeleton className="h-64" />
+            )}
           </Panel>
           <Panel title="Earlier insights">
             {!list.data?.length ? (

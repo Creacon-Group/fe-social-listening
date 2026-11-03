@@ -48,20 +48,39 @@ export function Panel({
   );
 }
 
-/** Headline numbers in one band split by hairlines, instead of a row of identical cards. */
-export function KpiBand({ items }: { items: { label: string; value: string; hint?: string }[] }) {
+/** Change vs the previous period: green up, orange down. `invert` for metrics where up is bad. */
+export function Delta({ value, unit = "%", invert = false }: { value: number | null; unit?: "%" | "pts"; invert?: boolean }) {
+  if (value === null) return <span className="text-xs text-muted">no earlier data</span>;
+  const good = invert ? value < 0 : value > 0;
+  const tone = value === 0 ? "text-muted" : good ? "text-pos" : "text-neg";
+  const arrow = value > 0 ? "▲" : value < 0 ? "▼" : "";
   return (
-    <dl className="glass grid grid-cols-2 overflow-hidden rounded-[18px] lg:grid-cols-4">
+    <span className={`num text-xs font-semibold ${tone}`}>
+      {arrow} {Math.abs(value).toLocaleString("en-GB", { maximumFractionDigits: 1 })}
+      {unit === "%" ? "%" : " pts"}
+    </span>
+  );
+}
+
+type Kpi = { label: string; value: string; hint?: string; delta?: React.ReactNode; detail?: React.ReactNode };
+
+/** Headline numbers in one band split by hairlines, instead of a row of identical cards. */
+export function KpiBand({ items }: { items: Kpi[] }) {
+  const cols = items.length >= 4 ? "lg:grid-cols-4" : items.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
+  return (
+    <dl className={`glass grid grid-cols-2 overflow-hidden rounded-[18px] ${cols}`}>
       {items.map((k, i) => (
         <div
           key={k.label}
           className={`p-4 md:p-5 ${i % 2 === 1 ? "border-l border-line" : ""} ${i >= 2 ? "border-t border-line lg:border-t-0" : ""} ${
-            i === 2 ? "lg:border-l" : ""
-          }`}
+            i >= 2 ? "lg:border-l" : ""
+          } ${items.length === 3 && i === 2 ? "col-span-2 lg:col-span-1" : ""}`}
         >
           <dt className="t-label text-muted">{k.label}</dt>
           <dd className="t-figure num mt-2.5">{k.value}</dd>
+          {k.delta && <dd className="mt-1.5">{k.delta}</dd>}
           {k.hint && <dd className="t-caption mt-2 text-muted">{k.hint}</dd>}
+          {k.detail && <dd className="mt-3">{k.detail}</dd>}
         </div>
       ))}
     </dl>

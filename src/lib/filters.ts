@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
-import type { Channel, RangePreset, Sentiment } from "./types";
+import type { Channel, PaidFilter, RangePreset, Sentiment, Voice } from "./types";
 
 export interface Filters {
   range: RangePreset;
@@ -12,6 +12,11 @@ export interface Filters {
   sentiments: Sentiment[];
   /** Topic category ids; 0 = mentions with no category. */
   categories: number[];
+  /** owned = brand accounts (Brand Voice), earned = everyone else. */
+  voice?: Voice;
+  /** Zanroo keywords, e.g. campaign keywords. */
+  keywords: string[];
+  paid?: PaidFilter;
 }
 
 const list = <T extends string>(v: string | null) => (v ? (v.split(",").filter(Boolean) as T[]) : []);
@@ -30,6 +35,9 @@ export function useFilters() {
       channels: list<Channel>(params.get("channels")),
       sentiments: list<Sentiment>(params.get("sentiments")),
       categories: (params.get("categories") ?? "").split(",").filter(Boolean).map(Number).filter(Number.isInteger),
+      voice: (["owned", "earned"] as const).find((v) => v === params.get("voice")),
+      keywords: params.getAll("kw"),
+      paid: (["paid", "organic"] as const).find((v) => v === params.get("paid")),
     }),
     [params],
   );
@@ -46,6 +54,9 @@ export function useFilters() {
       if (next.channels.length) q.set("channels", next.channels.join(","));
       if (next.sentiments.length) q.set("sentiments", next.sentiments.join(","));
       if (next.categories.length) q.set("categories", next.categories.join(","));
+      if (next.voice) q.set("voice", next.voice);
+      for (const k of next.keywords) q.append("kw", k); // keywords can contain commas
+      if (next.paid) q.set("paid", next.paid);
       router.replace(`${pathname}?${q.toString()}`, { scroll: false });
     },
     [filters, pathname, router],
@@ -65,6 +76,9 @@ export function filterQuery(f: Filters, extra: Record<string, string | number | 
   if (f.channels.length) q.set("channels", f.channels.join(","));
   if (f.sentiments.length) q.set("sentiments", f.sentiments.join(","));
   if (f.categories.length) q.set("categoryIds", f.categories.join(","));
+  if (f.voice) q.set("voice", f.voice);
+  if (f.keywords.length) q.set("keywords", f.keywords.join(","));
+  if (f.paid) q.set("paid", f.paid);
   for (const [k, v] of Object.entries(extra)) if (v !== undefined && v !== "") q.set(k, String(v));
   return q.toString();
 }
@@ -78,6 +92,9 @@ export function filterBody(f: Filters) {
     ...(f.channels.length ? { channels: f.channels } : {}),
     ...(f.sentiments.length ? { sentiments: f.sentiments } : {}),
     ...(f.categories.length ? { categoryIds: f.categories } : {}),
+    ...(f.voice ? { voice: f.voice } : {}),
+    ...(f.keywords.length ? { keywords: f.keywords } : {}),
+    ...(f.paid ? { paid: f.paid } : {}),
   };
 }
 
@@ -88,6 +105,6 @@ const shiftDay = (ymd: string, days: number) =>
 export function periodFor(f: Filters, asOf: string | null | undefined): { from: string; to: string } | null {
   if (f.range === "custom") return f.from && f.to ? { from: f.from, to: f.to } : null;
   if (!asOf) return null;
-  const days = f.range === "today" ? 1 : f.range === "7d" ? 7 : 30;
+  const days = { today: 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 }[f.range];
   return { from: shiftDay(asOf, 1 - days), to: asOf };
 }

@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
+import { Segmented } from "@/components/segmented";
 import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { fmt, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
 import { useProjectId } from "@/lib/project";
-import type { Demographics } from "@/lib/types";
+import type { Demographics, Heatmap } from "@/lib/types";
 
 const COUNTRY = new Intl.DisplayNames(["en"], { type: "region" });
 const countryName = (code: string) => {
@@ -38,6 +40,84 @@ function Bars({ rows, total }: { rows: { key: string; label: string; total: numb
   );
 }
 
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/** Weekday x hour grid (WIB). Darker = more. Shows when the audience posts and engages. */
+function TimingHeatmap({ data }: { data: Heatmap }) {
+  const [metric, setMetric] = useState<"total" | "engagements">("total");
+  const grid = new Map(data.cells.map((c) => [`${c.dow}-${c.hour}`, c]));
+  const max = Math.max(1, ...data.cells.map((c) => c[metric]));
+  const best = [...data.cells].sort((a, b) => b[metric] - a[metric]).slice(0, 3);
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <Segmented
+          label="Metric"
+          size="sm"
+          value={metric}
+          onChange={setMetric}
+          options={[
+            { value: "total", label: "Mentions" },
+            { value: "engagements", label: "Engagement" },
+          ]}
+        />
+        {best.length > 0 && (
+          <p className="text-sm text-muted">
+            Busiest:{" "}
+            {best.map((c, i) => (
+              <span key={`${c.dow}-${c.hour}`} className="font-semibold text-ink">
+                {i > 0 ? ", " : ""}
+                {DAYS_LONG[c.dow]} {String(c.hour).padStart(2, "0")}:00
+              </span>
+            ))}
+          </p>
+        )}
+      </div>
+      <div className="-mx-1 overflow-x-auto px-1">
+        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-[2px] text-[0.6875rem]">
+          <colgroup>
+            <col className="w-10" />
+            {Array.from({ length: 24 }, (_, h) => (
+              <col key={h} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              <th />
+              {Array.from({ length: 24 }, (_, h) => (
+                <th key={h} className="num font-normal text-muted">
+                  {h % 3 === 0 ? String(h).padStart(2, "0") : ""}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {DAYS.map((d, dow) => (
+              <tr key={d}>
+                <th className="pr-2 text-left font-medium text-muted">{d}</th>
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const c = grid.get(`${dow}-${hour}`);
+                  const v = c?.[metric] ?? 0;
+                  return (
+                    <td
+                      key={hour}
+                      title={`${DAYS_LONG[dow]} ${String(hour).padStart(2, "0")}:00 — ${fmt(c?.total ?? 0)} mentions, ${fmt(c?.engagements ?? 0)} engagement`}
+                      className="h-6 rounded-[4px]"
+                      style={{ background: v ? `color-mix(in srgb, var(--accent) ${Math.round(12 + (v / max) * 88)}%, transparent)` : "var(--line)" }}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-xs text-muted">Hours are WIB. Use the Owned / earned filter to compare when brands post with when the public talks.</p>
+    </div>
+  );
+}
+
 export default function DemographicsPage() {
   const projectId = useProjectId();
   const { filters } = useFilters();
@@ -46,14 +126,24 @@ export default function DemographicsPage() {
     fetcher,
     { keepPreviousData: true },
   );
+  const heat = useSWR<Heatmap>(`/api/projects/${projectId}/analytics/heatmap?${filterQuery(filters)}`, fetcher, {
+    keepPreviousData: true,
+  });
   const unknownGender = data?.gender.find((g) => g.label === "Unknown")?.total ?? 0;
+  const noGender = !!data && data.total > 0 && unknownGender === data.total;
   const countriesTotal = data?.countries.reduce((s, c) => s + c.total, 0) ?? 0;
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Demographics" detail={data ? fmtPeriod(data.period) : undefined} />
+      <PageHeader title="Audience & timing" detail={data ? fmtPeriod(data.period) : undefined} />
+
+      <Panel title="When people post">
+        {heat.data ? <TimingHeatmap data={heat.data} /> : <Skeleton className="h-56" />}
+      </Panel>
+
       <Notice>
-        Shows what the Zanroo export holds about authors: gender, province and country. The export has no age data.
+        Shows what the Zanroo export holds about authors: gender, province and country. Age is shown once the export includes it.
+        {noGender ? " Gender is empty in this data (every mention is Unknown), so it is hidden." : ""}
       </Notice>
       {error ? (
         <Notice tone="error">Couldn&apos;t load demographics: {error.message}</Notice>
@@ -63,6 +153,7 @@ export default function DemographicsPage() {
         <Notice>No mentions match these filters.</Notice>
       ) : (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          {!noGender && (
           <Panel title="Gender" aside={<SentimentLegend />}>
             <Bars rows={data.gender.map((g) => ({ key: g.label, ...g }))} total={data.total} />
             {unknownGender / data.total > 0.9 && (
@@ -72,6 +163,7 @@ export default function DemographicsPage() {
               </p>
             )}
           </Panel>
+          )}
 
           <Panel title="Country" aside={`${fmt(countriesTotal)} mentions with a country`}>
             {data.countries.length ? (
