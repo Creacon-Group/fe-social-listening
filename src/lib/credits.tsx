@@ -49,5 +49,5 @@ export function CreditsExhausted({ credits }: { credits: CreditStatus }) {
 
 export function creditLine(c: CreditStatus) {
   if (c.unlimited) return "Unlimited credits (superadmin).";
-  return `${c.remaining} of ${c.limit} questions left today. Refills at 00:00 WIB.`;
+  return `${c.remaining} of ${c.limit} AI credits left today (1 per assistant question or manual GEO prompt). Refills at 00:00 WIB.`;
 }

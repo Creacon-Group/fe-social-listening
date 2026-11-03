@@ -74,7 +74,10 @@ export interface GeoEstimate {
 
 export interface GeoBatchSummary {
   id: number;
-  period: string;
+  /** YYYY-MM for monthly runs; null for manual runs. */
+  period: string | null;
+  kind: "monthly" | "adhoc";
+  label: string | null;
   status: GeoBatchStatus;
   trigger: string;
   total: number;
@@ -125,7 +128,9 @@ export interface GeoGroup {
 export interface GeoOverview {
   batch: {
     id: number;
-    period: string;
+    period: string | null;
+    kind: "monthly" | "adhoc";
+    label: string | null;
     status: GeoBatchStatus;
     total: number;
     evaluator: string;

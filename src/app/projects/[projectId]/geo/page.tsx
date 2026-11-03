@@ -8,6 +8,7 @@ import { btnPrimary, btnQuiet, Notice, PageHeader } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import type { GeoBatch, GeoBatchSummary, GeoEstimate } from "@/lib/geo-types";
 import { useMe, useProjectId } from "@/lib/project";
+import { ManualRun } from "./manual-run";
 import { GeoOverviewTab } from "./overview";
 import { GeoPromptsTab } from "./prompts";
 import { GeoResponsesTab } from "./responses";
@@ -32,14 +33,18 @@ function RunBar({
   batchId,
   setBatchId,
   canRun,
+  canManual,
 }: {
   projectId: number;
   batchId: number | null;
   setBatchId: (id: number | null) => void;
   canRun: boolean;
+  canManual: boolean;
 }) {
+  const [manual, setManual] = useState(false);
   const list = useSWR<GeoBatchSummary[]>(`/api/projects/${projectId}/geo/batches`, fetcher);
-  const id = batchId ?? list.data?.[0]?.id ?? null;
+  // Same default as the overview: the latest monthly run, else the latest manual run.
+  const id = batchId ?? (list.data?.find((x) => x.kind === "monthly") ?? list.data?.[0])?.id ?? null;
   const running = (s?: string) => s === "RUNNING" || s === "PAUSED";
   const batch = useSWR<GeoBatch>(id ? `/api/projects/${projectId}/geo/batches/${id}` : null, fetcher, {
     refreshInterval: (d) => (running(d?.status) ? 3000 : 0),
@@ -92,7 +97,7 @@ function RunBar({
           <Select label="Month" hideLabel density="sm" value={id ?? ""} onChange={(e) => setBatchId(Number(e.target.value))}>
             {list.data.map((x) => (
               <option key={x.id} value={x.id}>
-                {monthName(x.period)}
+                {x.kind === "adhoc" ? x.label ?? "Manual run" : monthName(x.period!)}
               </option>
             ))}
           </Select>
@@ -105,7 +110,12 @@ function RunBar({
         )}
         {b && <span className="text-xs text-muted">{(b.tokens.prompt + b.tokens.completion).toLocaleString("en-GB")} tokens used</span>}
         <span className="ml-auto flex flex-wrap gap-2">
-          {canRun && b && !running(b.status) && b.failed > 0 && (
+          {canManual && (
+            <button className={btnQuiet} onClick={() => setManual((v) => !v)}>
+              Manual run
+            </button>
+          )}
+          {canRun && b && b.kind !== "adhoc" && !running(b.status) && b.failed > 0 && (
             <button className={btnQuiet} disabled={busy} onClick={() => act(`batches/${b.id}/retry-failed`)}>
               Retry {b.failed} failed
             </button>
@@ -121,7 +131,8 @@ function RunBar({
       {canRun && est?.alreadyRan && (
         <p className="text-xs text-muted">
           GEO runs once a month to keep token use low. {monthName(est.period)} has already run; the next run is possible next month
-          {est.alreadyRan ? " (failed runs can be retried in this month's batch)." : "."}
+          {est.alreadyRan ? " (failed runs can be retried in this month's batch)." : "."} To test extra prompts now, use Manual run (1 AI
+          credit per prompt).
         </p>
       )}
 
@@ -147,6 +158,22 @@ function RunBar({
         </Notice>
       )}
       {error && <Notice tone="error">{error}</Notice>}
+      {manual && (
+        <ManualRun
+          projectId={projectId}
+          onClose={() => setManual(false)}
+          onStarted={(id) => {
+            setManual(false);
+            setBatchId(id);
+            void list.mutate();
+          }}
+        />
+      )}
+      {b?.kind === "adhoc" && (
+        <p className="text-xs text-muted">
+          You are looking at a manual run. Its numbers are separate from the monthly benchmark and are not compared month to month.
+        </p>
+      )}
       {b && running(b.status) && (
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={done} aria-valuemax={b.total}>
           <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${(done / Math.max(b.total, 1)) * 100}%` }} />
@@ -170,7 +197,7 @@ export default function GeoPage() {
         title="AI visibility"
         detail="How Gemini and GPT answer consumer questions about your category: are your brands mentioned, recommended and cited?"
       />
-      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} />
+      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} canManual={canEdit} />
       <div className="-mx-1 max-w-full overflow-x-auto px-1 py-0.5">
         <Segmented
           label="Section"
