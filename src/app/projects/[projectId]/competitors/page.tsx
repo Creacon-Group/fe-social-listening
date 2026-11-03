@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import useSWR from "swr";
 import { Segmented } from "@/components/segmented";
+import { GeoCompetitorsPanel } from "@/components/geo-panels";
 import { SovRibbon } from "@/components/sov-ribbon";
 import { fmtBucket, INTERVAL_OPTIONS } from "@/components/trend-charts";
 import { BrandName, Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
@@ -100,6 +101,8 @@ export default function CompetitorsPage() {
             </div>
             <SovRibbon competitors={data} brandColors={brands} />
           </Panel>
+
+          <GeoCompetitorsPanel projectId={projectId} periodEnd={data.period.to} />
 
           <Panel title="Brand by brand" aside={<SentimentLegend />}>
             <div className="-mx-2 overflow-x-auto">

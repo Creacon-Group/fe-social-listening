@@ -202,3 +202,24 @@ export interface GeoRunDetail {
 /** "gemini/gemini-3.8-flash" + SEARCH -> "Gemini · Search". */
 export const groupLabel = (model: string, mode: GeoMode) =>
   `${model.toLowerCase().includes("gemini") ? "Gemini" : model.toLowerCase().includes("gpt") ? "GPT" : model} · ${MODE_LABEL[mode]}`;
+
+/** GET /geo/summary: latest monthly run not after the period end, compact (null = no run yet). */
+export interface GeoSummary {
+  run: { id: number; period: string; status: GeoBatchStatus; finishedAt: string | null; prompts: number };
+  note: string;
+  groups: {
+    label: string;
+    model: string;
+    mode: GeoMode;
+    validResponses: number;
+    mentionRate: number | null;
+    recommendationRate: number | null;
+    avgPosition: number | null;
+    sov: number | null;
+    citationsSupported: boolean;
+    ownedCitationRate: number | null;
+    anyCitationRate: number | null;
+    brands: { name: string; isTarget: boolean; brandId: number | null; mentionRate: number | null; recommendationRate: number | null; avgPosition: number | null; sov: number | null }[];
+    topDomains: { domain: string; responses: number; owned: boolean }[];
+  }[];
+}

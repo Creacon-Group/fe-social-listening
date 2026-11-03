@@ -5,6 +5,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { ReportActions } from "@/components/report-actions";
 import { Segmented } from "@/components/segmented";
+import { GeoSummaryPanel } from "@/components/geo-panels";
 import { SovRibbon } from "@/components/sov-ribbon";
 import { TrendPanelBody } from "@/components/trend-charts";
 import { Delta, KpiBand, Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } from "@/components/ui";
@@ -261,6 +262,8 @@ export default function OverviewPage() {
               </ul>
             </Panel>
           </div>
+
+          <GeoSummaryPanel projectId={projectId} periodEnd={o.period.to} />
 
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
             {c && c.brands.length > 0 && (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { GeoSummaryPanel } from "@/components/geo-panels";
 import { ComboChart } from "@/components/trend-charts";
 import { btnPrimary, Notice, PageHeader, Panel, SentimentChip, Skeleton } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
@@ -148,6 +149,7 @@ export default function InsightsPage() {
               <Skeleton className="h-64" />
             )}
           </Panel>
+          <GeoSummaryPanel projectId={projectId} periodEnd={period?.to} />
           <Panel title="Earlier insights">
             {!list.data?.length ? (
               <p className="text-sm text-muted">No insights yet.</p>
