@@ -343,7 +343,7 @@ export interface Category {
 
 export interface ZanrooTagSuggestions {
   sampled: number;
-  items: { name: string; kind: "tag" | "category"; count: number }[];
+  items: { name: string; kind: "tag" | "category" | "keyword"; count: number }[];
 }
 
 export interface CategoryPreview {
