@@ -39,6 +39,7 @@ function PromptRow({ projectId, p, canEdit, onChanged }: { projectId: number; p:
           <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
             <span className={`rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[p.status]}`}>{p.status.charAt(0) + p.status.slice(1).toLowerCase()}</span>
             <span>{CATEGORY_LABEL[p.category]}</span>·<span>{p.branded ? "Branded" : "Non-branded"}</span>·<span>v{p.version}</span>
+            <span>· {p.language === "en" ? "English" : "Bahasa Indonesia"}</span>
             {p.source === "suggested" && <span>· suggested by AI</span>}
           </p>
           {error && <p className="mt-1 text-xs text-neg">{error}</p>}
@@ -92,6 +93,7 @@ export function GeoPromptsTab({ projectId, canEdit }: { projectId: number; canEd
   const [text, setText] = useState("");
   const [category, setCategory] = useState<GeoCategory>("CATEGORY_DISCOVERY");
   const [branded, setBranded] = useState(false);
+  const [language, setLanguage] = useState<"id" | "en">("id");
   const [busy, setBusy] = useState<"add" | "suggest" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [show, setShow] = useState<"active" | "ARCHIVED">("active");
@@ -100,7 +102,7 @@ export function GeoPromptsTab({ projectId, canEdit }: { projectId: number; canEd
     setBusy("add");
     setMessage(null);
     try {
-      await apiSend(key, "POST", { text, category, branded });
+      await apiSend(key, "POST", { text, category, branded, language });
       setText("");
       await mutate();
     } catch (e) {
@@ -114,9 +116,9 @@ export function GeoPromptsTab({ projectId, canEdit }: { projectId: number; canEd
     setBusy("suggest");
     setMessage(null);
     try {
-      const r = await apiSend<{ created: number; skipped?: number }>(`${key}/suggest`, "POST");
+      const r = await apiSend<{ created: number; skipped?: number; languages?: string[] }>(`${key}/suggest`, "POST");
       setMessage(
-        `${r.created} draft prompts added. Review and approve the ones you want in the benchmark.` +
+        `${r.created} draft prompts added${r.languages && r.languages.length > 1 ? " in Bahasa Indonesia and English" : ""}. Review and approve the ones you want in the benchmark.` +
           (r.skipped ? ` ${r.skipped} suggestions were not in the project language and were left out.` : ""),
       );
       await mutate();
@@ -179,6 +181,10 @@ export function GeoPromptsTab({ projectId, canEdit }: { projectId: number; canEd
                   {CATEGORY_LABEL[c]}
                 </option>
               ))}
+            </Select>
+            <Select label="Language" density="sm" value={language} onChange={(e) => setLanguage(e.target.value as "id" | "en")}>
+              <option value="id">Bahasa Indonesia</option>
+              <option value="en">English</option>
             </Select>
             <label className="flex min-h-9 items-center gap-2 text-sm">
               <input type="checkbox" checked={branded} onChange={(e) => setBranded(e.target.checked)} className="h-4 w-4 accent-[var(--ink)]" />

@@ -101,6 +101,7 @@ function SettingsForm({ url: key, data, canEdit, onSaved }: { url: string; data:
           <Select label="Prompt language" disabled={off} value={draft.profile.language ?? "id"} onChange={(e) => setProfile({ language: e.target.value })}>
             <option value="id">Bahasa Indonesia</option>
             <option value="en">English</option>
+            <option value="both">Bahasa Indonesia + English</option>
           </Select>
         </div>
         <p className="mt-3 text-xs text-muted">
