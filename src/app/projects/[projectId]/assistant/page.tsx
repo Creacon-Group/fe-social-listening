@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
+import { ChatChart } from "@/components/chat-chart";
 import { btnPrimary, Notice, PageHeader } from "@/components/ui";
 import { isBudgetError, notifyAiError } from "@/lib/ai-errors";
 import { apiSend, fetcher } from "@/lib/api";
@@ -154,8 +155,9 @@ function ChatPane({
             </div>
           </div>
         )}
-        {messages.map((m) => {
+        {messages.map((m, mi) => {
           const fresh = !seen.has(m.id);
+          const streaming = status === "streaming" && mi === messages.length - 1;
           return m.role === "user" ? (
             <div key={m.id} className={`flex justify-end ${fresh ? "msg-enter" : ""}`}>
               <p className="max-w-[80%] whitespace-pre-line rounded-[18px] rounded-br-md bg-ink px-4 py-2.5 text-[0.9375rem] leading-snug text-on-ink">
@@ -177,6 +179,16 @@ function ChatPane({
                               <table>{children}</table>
                             </div>
                           ),
+                          // ```chart blocks from the assistant become a chart.
+                          pre: ({ node, children }) => {
+                            const code = node?.children[0];
+                            const cls = code?.type === "element" ? code.properties?.className : undefined;
+                            if (code?.type === "element" && Array.isArray(cls) && cls.includes("language-chart")) {
+                              const raw = code.children.map((c) => (c.type === "text" ? c.value : "")).join("");
+                              return <ChatChart raw={raw} streaming={streaming} />;
+                            }
+                            return <pre>{children}</pre>;
+                          },
                         }}
                       >
                         {p.text}
