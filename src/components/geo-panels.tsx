@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 import { Segmented } from "@/components/segmented";
-import { Panel, Skeleton } from "@/components/ui";
+import { BetaChip, Panel, Skeleton } from "@/components/ui";
 import { fetcher } from "@/lib/api";
 import { fmtPct } from "@/lib/format";
 import type { GeoSummary } from "@/lib/geo-types";
@@ -43,7 +43,14 @@ export function GeoSummaryPanel({ projectId, periodEnd, className = "" }: { proj
   const { data, isLoading } = useGeoSummary(projectId, periodEnd);
   const target = data?.groups[0]?.brands.find((b) => b.isTarget)?.name;
   return (
-    <Panel title={target ? `AI visibility · ${target}` : "AI visibility"} aside={<Aside projectId={projectId} s={data} />} className={className}>
+    <Panel
+      title={
+        <>
+          {target ? `AI visibility · ${target}` : "AI visibility"}
+          <BetaChip className="ml-2" />
+        </>
+      }
+      aside={<Aside projectId={projectId} s={data} />} className={className}>
       {isLoading && data === undefined ? (
         <Skeleton className="h-32" />
       ) : !data ? (
@@ -89,7 +96,12 @@ export function GeoCompetitorsPanel({ projectId, periodEnd }: { projectId: numbe
   const g = data?.groups[Math.min(pick, (data?.groups.length ?? 1) - 1)];
   return (
     <Panel
-      title="AI share of voice"
+      title={
+        <>
+          AI share of voice
+          <BetaChip className="ml-2" />
+        </>
+      }
       aside={
         data && data.groups.length > 1 ? (
           <div className="max-w-full overflow-x-auto">

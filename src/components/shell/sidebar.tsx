@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
+import { BetaChip } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { useMe } from "@/lib/project";
 import type { Project } from "@/lib/types";
@@ -119,11 +120,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
                       }`}
                     >
                       {item.label}
-                      {item.beta && (
-                        <span className="ml-2 inline-flex h-5 items-center rounded-full px-2 text-[0.6875rem] font-semibold leading-none text-accent ring-1 ring-accent/50 ring-inset">
-                          Beta
-                        </span>
-                      )}
+                      {item.beta && <BetaChip className="ml-2" />}
                     </Link>
                   </li>
                 );
