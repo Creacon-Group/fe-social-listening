@@ -25,6 +25,8 @@ const SUGGESTIONS = [
 const TOOL_LABEL: Record<string, string> = {
   get_overview: "Reading the summary",
   compare_brands: "Comparing brands",
+  brand_trend: "Reading the daily trend",
+  get_ai_visibility: "Reading AI visibility",
   top_mentions: "Finding top mentions",
 };
 
