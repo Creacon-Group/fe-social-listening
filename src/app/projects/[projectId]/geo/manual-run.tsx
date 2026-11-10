@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Select } from "@/components/select";
 import { btnPrimary, btnQuiet, inputBase, Notice } from "@/components/ui";
+import { isBudgetError, notifyAiError } from "@/lib/ai-errors";
 import { ApiError, apiSend, fetcher } from "@/lib/api";
 import { ContactLink, creditLine, useCredits } from "@/lib/credits";
 import { CATEGORY_LABEL, type GeoBatch, type GeoCategory, type GeoPrompt } from "@/lib/geo-types";
@@ -45,7 +46,11 @@ export function ManualRun({ projectId, onStarted, onClose }: { projectId: number
       await credits.mutate();
       onStarted(b.id);
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 429 ? "Not enough AI credits left today." : (e as Error).message);
+      const msg = (e as Error).message;
+      const outOfCredits = e instanceof ApiError && e.status === 429;
+      if (outOfCredits) notifyAiError("AI_CREDITS_EXHAUSTED", { context: { Project: projectId, Feature: "GEO manual run" }, detail: msg });
+      else if (isBudgetError(null, msg)) notifyAiError("AI_BUDGET_EXCEEDED", { context: { Project: projectId, Feature: "GEO manual run" }, detail: msg });
+      setError(outOfCredits ? "Not enough AI credits left today." : msg);
       await credits.mutate();
     } finally {
       setBusy(false);

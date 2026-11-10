@@ -5,9 +5,11 @@ import useSWR from "swr";
 import { Segmented } from "@/components/segmented";
 import { Select } from "@/components/select";
 import { btnPrimary, btnQuiet, Notice, PageHeader } from "@/components/ui";
+import { notifyAiError, isBudgetError } from "@/lib/ai-errors";
 import { apiSend, fetcher } from "@/lib/api";
-import type { GeoBatch, GeoBatchSummary, GeoEstimate } from "@/lib/geo-types";
+import type { GeoBatch, GeoBatchSummary, GeoEstimate, GeoRunRow } from "@/lib/geo-types";
 import { useMe, useProjectId } from "@/lib/project";
+import { GeoBudget } from "./budget";
 import { ManualRun } from "./manual-run";
 import { GeoOverviewTab } from "./overview";
 import { GeoPromptsTab } from "./prompts";
@@ -34,12 +36,14 @@ function RunBar({
   setBatchId,
   canRun,
   canManual,
+  isSuper,
 }: {
   projectId: number;
   batchId: number | null;
   setBatchId: (id: number | null) => void;
   canRun: boolean;
   canManual: boolean;
+  isSuper: boolean;
 }) {
   const [manual, setManual] = useState(false);
   const list = useSWR<GeoBatchSummary[]>(`/api/projects/${projectId}/geo/batches`, fetcher);
@@ -54,6 +58,22 @@ function RunBar({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resumed = useRef(new Set<string>());
+
+  // Failed runs in this batch: if any hit the AI budget limit, tell the user to contact their admin.
+  const failedKey = batch.data && batch.data.failed > 0 ? `${batch.data.id}:${batch.data.failed}` : null;
+  const failed = useSWR<{ items: GeoRunRow[] }>(
+    failedKey ? `/api/projects/${projectId}/geo/runs?batchId=${batch.data!.id}&status=FAILED` : null,
+    fetcher,
+  );
+  useEffect(() => {
+    const hit = failed.data?.items.find((r) => isBudgetError(r.errorType, r.errorMessage));
+    if (!hit || !batch.data) return;
+    notifyAiError("AI_BUDGET_EXCEEDED", {
+      context: { Project: projectId, Batch: batch.data.id, Run: hit.id, Model: `${hit.model} (${hit.mode})` },
+      detail: hit.errorMessage,
+      dedupeKey: `geo-budget:${batch.data.id}`,
+    });
+  }, [failed.data, batch.data, projectId]);
 
   // A batch pauses when the server's time budget runs out; keep it going while the page is open.
   useEffect(() => {
@@ -80,7 +100,9 @@ function RunBar({
       await batch.mutate();
       setConfirm(false);
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      if (isBudgetError(null, msg)) notifyAiError("AI_BUDGET_EXCEEDED", { context: { Project: projectId }, detail: msg });
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -92,6 +114,7 @@ function RunBar({
 
   return (
     <div className="space-y-3">
+      {isSuper && <GeoBudget projectId={projectId} />}
       <div className="flex flex-wrap items-center gap-2">
         {list.data && list.data.length > 0 && (
           <Select label="Month" hideLabel density="sm" value={id ?? ""} onChange={(e) => setBatchId(Number(e.target.value))}>
@@ -197,7 +220,7 @@ export default function GeoPage() {
         title="AI visibility"
         detail="How Gemini and GPT answer consumer questions about your category: are your brands mentioned, recommended and cited?"
       />
-      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} canManual={canEdit} />
+      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} canManual={canEdit} isSuper={me?.role === "SUPERADMIN"} />
       <div className="-mx-1 max-w-full overflow-x-auto px-1 py-0.5">
         <Segmented
           label="Section"

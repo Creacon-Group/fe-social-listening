@@ -223,3 +223,17 @@ export interface GeoSummary {
     topDomains: { domain: string; responses: number; owned: boolean }[];
   }[];
 }
+
+/** AI gateway budget behind one model's API key (USD). Superadmin only. */
+export interface GeoModelBudget {
+  key: "gemini" | "gpt";
+  label: string;
+  configured: boolean;
+  /** Same ownerId on two models = one shared budget. */
+  ownerId: string | null;
+  spend: number | null;
+  maxBudget: number | null;
+  remaining: number | null;
+  resetAt: string | null;
+  error: string | null;
+}

@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
 import { btnPrimary, Notice, PageHeader } from "@/components/ui";
+import { isBudgetError, notifyAiError } from "@/lib/ai-errors";
 import { apiSend, fetcher } from "@/lib/api";
 import { CreditsExhausted, creditLine, useCredits } from "@/lib/credits";
 import { type Filters, filterBody, useFilters } from "@/lib/filters";
@@ -87,7 +88,12 @@ function ChatPane({
       onSent();
       void refreshCredits();
     },
-    onError: () => void refreshCredits(),
+    onError: (e) => {
+      void refreshCredits();
+      const context = { Project: projectId, Feature: "Brand assistant", Session: sessionId };
+      if (e.message.includes("CREDITS_EXHAUSTED")) notifyAiError("AI_CREDITS_EXHAUSTED", { context, detail: e.message });
+      else if (isBudgetError(null, e.message)) notifyAiError("AI_BUDGET_EXCEEDED", { context, detail: e.message });
+    },
   });
   const busy = status === "submitted" || status === "streaming";
   const creditError = error?.message.includes("CREDITS_EXHAUSTED");
@@ -212,9 +218,11 @@ function ChatPane({
           <p role="alert" className="rounded-lg bg-neg/10 px-3 py-2 text-sm text-neg">
             {error.message.includes("503") || error.message.includes("not configured")
               ? "The assistant isn't set up on the server yet (AI model settings)."
-              : /overloaded|high demand|rate limit/i.test(error.message)
-                ? "The AI model is busy right now. Wait a moment, then send the question again."
-                : "No answer came back. Send the question again."}
+              : isBudgetError(null, error.message)
+                ? "The AI usage limit has been reached. Please ask your admin."
+                : /overloaded|high demand|rate limit/i.test(error.message)
+                  ? "The AI model is busy right now. Wait a moment, then send the question again."
+                  : "No answer came back. Send the question again."}
           </p>
         )}
       </div>
