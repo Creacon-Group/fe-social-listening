@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Select } from "@/components/select";
 import { apiSend, fetcher } from "@/lib/api";
 import { useMe } from "@/lib/project";
 import type { Project } from "@/lib/types";
 
-type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean };
+type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean; beta?: boolean };
 
 /**
  * Order follows how clients read the dashboard: quick stats first (Summary, then AI Insights),
@@ -37,7 +36,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "AI",
     items: [
-      { slug: "geo", label: "AI visibility", keepFilters: false },
+      { slug: "geo", label: "AI visibility", keepFilters: false, beta: true },
       { slug: "assistant", label: "Brand assistant", keepFilters: true },
     ],
   },
@@ -93,21 +92,13 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
         </span>
       </div>
 
-      <Select
-        label="Project"
-        className="mt-5 px-2.5"
-        value={projectId}
-        onChange={(e) => {
-          onNavigate?.();
-          router.push(`/projects/${e.target.value}/overview`);
-        }}
-      >
-        {(projects ?? []).map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </Select>
+      {/* Static project label: each deployment serves one project, so no picker. */}
+      <div className="mt-5 px-2.5">
+        <span className="t-caption mb-1 block text-muted">Project</span>
+        <p className="flex min-h-10 items-center truncate rounded-lg bg-card px-3 text-sm font-semibold text-ink ring-1 ring-line ring-inset">
+          {projects?.find((p) => p.id === projectId)?.name ?? "\u00a0"}
+        </p>
+      </div>
 
       <nav aria-label="Menu" className="mt-5 space-y-4">
         {groups.map((g) => (
@@ -128,6 +119,11 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
                       }`}
                     >
                       {item.label}
+                      {item.beta && (
+                        <span className="ml-2 inline-flex h-5 items-center rounded-full px-2 text-[0.6875rem] font-semibold leading-none text-accent ring-1 ring-accent/50 ring-inset">
+                          Beta
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
