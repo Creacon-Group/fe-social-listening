@@ -9,7 +9,6 @@ import { notifyAiError, isBudgetError } from "@/lib/ai-errors";
 import { apiSend, fetcher } from "@/lib/api";
 import type { GeoBatch, GeoBatchSummary, GeoEstimate, GeoRunRow } from "@/lib/geo-types";
 import { useMe, useProjectId } from "@/lib/project";
-import { GeoBudget } from "./budget";
 import { ManualRun } from "./manual-run";
 import { GeoOverviewTab } from "./overview";
 import { GeoPromptsTab } from "./prompts";
@@ -36,14 +35,12 @@ function RunBar({
   setBatchId,
   canRun,
   canManual,
-  isSuper,
 }: {
   projectId: number;
   batchId: number | null;
   setBatchId: (id: number | null) => void;
   canRun: boolean;
   canManual: boolean;
-  isSuper: boolean;
 }) {
   const [manual, setManual] = useState(false);
   const list = useSWR<GeoBatchSummary[]>(`/api/projects/${projectId}/geo/batches`, fetcher);
@@ -114,7 +111,6 @@ function RunBar({
 
   return (
     <div className="space-y-3">
-      {isSuper && <GeoBudget projectId={projectId} />}
       <div className="flex flex-wrap items-center gap-2">
         {list.data && list.data.length > 0 && (
           <Select label="Month" hideLabel density="sm" value={id ?? ""} onChange={(e) => setBatchId(Number(e.target.value))}>
@@ -220,7 +216,7 @@ export default function GeoPage() {
         title="AI visibility"
         detail="How Gemini and GPT answer consumer questions about your category: are your brands mentioned, recommended and cited?"
       />
-      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} canManual={canEdit} isSuper={me?.role === "SUPERADMIN"} />
+      <RunBar projectId={projectId} batchId={batchId} setBatchId={setBatchId} canRun={isAdmin} canManual={canEdit} />
       <div className="-mx-1 max-w-full overflow-x-auto px-1 py-0.5">
         <Segmented
           label="Section"

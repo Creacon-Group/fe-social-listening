@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { AiBudgetPanel } from "@/components/ai-budget-panel";
 import { Select } from "@/components/select";
 import { btnPrimary, btnQuiet, inputBase, Notice, PageHeader, Panel } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
-import { useMe } from "@/lib/project";
+import { useMe, useProjectId } from "@/lib/project";
 import type { AdminUser, Role } from "@/lib/types";
 
 const KEY = "/api/admin/users";
@@ -235,6 +236,7 @@ function NewUserForm({ onCreated }: { onCreated: () => void }) {
 
 export default function CreditsPage() {
   const { data: me } = useMe();
+  const projectId = useProjectId();
   const isSuper = me?.role === "SUPERADMIN";
   const { data: users, error, mutate } = useSWR<AdminUser[]>(isSuper ? KEY : null, fetcher);
 
@@ -243,6 +245,8 @@ export default function CreditsPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Assistant credits" detail="One credit is one answered question. Credits reset at 00:00 WIB." />
+
+      {isSuper && <AiBudgetPanel projectId={projectId} />}
 
       <Panel title="New user" aside="New users join every project.">
         <NewUserForm onCreated={() => void mutate()} />
