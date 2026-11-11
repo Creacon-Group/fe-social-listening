@@ -10,9 +10,11 @@ const PRESS = { type: "spring", bounce: 0, duration: 0.2 } as const;
    the new choice at once and hands it on only once the slide has (nearly) settled, so the
    heavy render never lands mid-animation. Same idea as Ark UI keeping the value in local state. */
 const COMMIT_MS = 340;
+/* With Reduce Motion on, the thumb still slides (small, contained motion, as iOS segmented
+   controls do); only the press squash is dropped. Big motion (sheets, drawers) still honours it. */
 
 /** Pending choice shown right away, committed after the slide. Cleared once the prop catches up. */
-function useDeferredCommit<T>(committed: T, reduce: boolean | null) {
+function useDeferredCommit<T>(committed: T) {
   const [pending, setPending] = useState<T | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const queued = useRef<(() => void) | null>(null);
@@ -33,10 +35,6 @@ function useDeferredCommit<T>(committed: T, reduce: boolean | null) {
   const run = (next: T, commit: () => void) => {
     clearTimeout(timer.current);
     queued.current = null;
-    if (reduce) {
-      setPending(null);
-      return commit();
-    }
     setPending(next);
     queued.current = commit;
     timer.current = setTimeout(flush, COMMIT_MS);
@@ -65,7 +63,7 @@ export function Segmented<T extends string>({
   const id = useId();
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
-  const [pending, run] = useDeferredCommit<T>(value, reduce);
+  const [pending, run] = useDeferredCommit<T>(value);
   const shown = pending ?? value;
   const select = (v: T) => (v === shown ? undefined : run(v, () => onChange(v)));
   return (
@@ -107,7 +105,7 @@ export function Segmented<T extends string>({
               <motion.span
                 layoutId={`seg-${id}`}
                 animate={{ scale: pressed && !reduce ? 0.94 : 1 }}
-                transition={reduce ? { duration: 0 } : { ...SLIDE, scale: PRESS }}
+                transition={{ ...SLIDE, scale: PRESS }}
                 className="absolute inset-0 rounded-full bg-card shadow-[0_3px_8px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]"
               />
             )}
@@ -129,12 +127,11 @@ type Box = { x: number; y: number; w: number; h: number };
  * each selected chip fills on its own and the sliding capsule steps aside.
  */
 export function ChipGroup({ items, single = false }: { items: ChipItem[]; /** one choice at a time */ single?: boolean }) {
-  const reduce = useReducedMotion();
   const wrap = useRef<HTMLDivElement>(null);
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const onKeys = items.filter((i) => i.on).map((i) => i.key);
   const committedSolo = onKeys.length === 1 ? onKeys[0] : null;
-  const [pending, run, flush] = useDeferredCommit<string>(committedSolo ?? "", reduce);
+  const [pending, run, flush] = useDeferredCommit<string>(committedSolo ?? "");
   const solo = pending ?? committedSolo;
   const allKey = items[0]?.key;
   /** Where the capsule will end up after this tap, when that is a single chip; else null. */
@@ -182,7 +179,7 @@ export function ChipGroup({ items, single = false }: { items: ChipItem[]; /** on
           aria-hidden
           initial={false}
           animate={{ x: box.x, y: box.y, width: box.w, height: box.h }}
-          transition={instant || reduce ? { duration: 0 } : SLIDE}
+          transition={instant ? { duration: 0 } : SLIDE}
           className="pointer-events-none absolute left-0 top-0 rounded-full bg-ink shadow-[0_6px_14px_-6px_rgb(0_0_0/0.45)]"
         />
       )}
@@ -190,7 +187,7 @@ export function ChipGroup({ items, single = false }: { items: ChipItem[]; /** on
         const on = pending ? item.key === pending : item.on;
         const own = on && !solo; // filled by itself when several are on
         // Text turns white as the sliding capsule arrives, not before; fills and losses are instant.
-        const arriving = solo === item.key && prevSolo !== null && prevSolo !== solo && !reduce;
+        const arriving = solo === item.key && prevSolo !== null && prevSolo !== solo;
         return (
           <button
             key={item.key}

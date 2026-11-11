@@ -275,7 +275,8 @@ button:not(:disabled):not([data-segment]):active,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
+  /* Segmented controls and filter chips keep their short colour/slide transitions (see segmented.tsx). */
+  *:not([data-segment]),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
