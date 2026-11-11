@@ -1,11 +1,48 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 /* iOS-like spring: critically damped slide, no overshoot, settles in ~0.35s. */
 const SLIDE = { type: "spring", bounce: 0, duration: 0.38 } as const;
 const PRESS = { type: "spring", bounce: 0, duration: 0.2 } as const;
+/* A filter change re-renders the whole dashboard and blocks the main thread. The control shows
+   the new choice at once and hands it on only once the slide has (nearly) settled, so the
+   heavy render never lands mid-animation. Same idea as Ark UI keeping the value in local state. */
+const COMMIT_MS = 340;
+
+/** Pending choice shown right away, committed after the slide. Cleared once the prop catches up. */
+function useDeferredCommit<T>(committed: T, reduce: boolean | null) {
+  const [pending, setPending] = useState<T | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const queued = useRef<(() => void) | null>(null);
+  // Any change to the committed value ends the pending state, even if it landed elsewhere.
+  const [seen, setSeen] = useState(committed);
+  if (seen !== committed) {
+    setSeen(committed);
+    setPending(null);
+  }
+  useEffect(() => () => clearTimeout(timer.current), []);
+  /** Commit a waiting choice now (before a tap that does not slide builds on it). */
+  const flush = () => {
+    clearTimeout(timer.current);
+    const fn = queued.current;
+    queued.current = null;
+    fn?.();
+  };
+  const run = (next: T, commit: () => void) => {
+    clearTimeout(timer.current);
+    queued.current = null;
+    if (reduce) {
+      setPending(null);
+      return commit();
+    }
+    setPending(next);
+    queued.current = commit;
+    timer.current = setTimeout(flush, COMMIT_MS);
+  };
+  return [pending, run, flush] as const;
+}
 
 /**
  * Segmented control (UISegmentedControl). One thumb slides to the chosen segment; a new tap
@@ -28,6 +65,9 @@ export function Segmented<T extends string>({
   const id = useId();
   const reduce = useReducedMotion();
   const [pressed, setPressed] = useState(false);
+  const [pending, run] = useDeferredCommit<T>(value, reduce);
+  const shown = pending ?? value;
+  const select = (v: T) => (v === shown ? undefined : run(v, () => onChange(v)));
   return (
     <div
       role="radiogroup"
@@ -38,15 +78,15 @@ export function Segmented<T extends string>({
         const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
         if (!step) return;
         e.preventDefault();
-        const i = options.findIndex((o) => o.value === value);
+        const i = options.findIndex((o) => o.value === shown);
         const next = options[(i + step + options.length) % options.length];
-        onChange(next.value);
+        select(next.value);
         const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>("[role=radio]");
         buttons[options.indexOf(next)]?.focus();
       }}
     >
       {options.map((o) => {
-        const active = o.value === value;
+        const active = o.value === shown;
         return (
           <button
             key={o.value}
@@ -55,7 +95,7 @@ export function Segmented<T extends string>({
             data-segment
             aria-checked={active}
             tabIndex={active ? 0 : -1}
-            onClick={() => onChange(o.value)}
+            onClick={() => select(o.value)}
             onPointerDown={() => active && setPressed(true)}
             onPointerUp={() => setPressed(false)}
             onPointerLeave={() => setPressed(false)}
@@ -88,12 +128,27 @@ type Box = { x: number; y: number; w: number; h: number };
  * capsule slides to it (across wrapped rows too), like the segmented control. With several on,
  * each selected chip fills on its own and the sliding capsule steps aside.
  */
-export function ChipGroup({ items }: { items: ChipItem[] }) {
+export function ChipGroup({ items, single = false }: { items: ChipItem[]; /** one choice at a time */ single?: boolean }) {
   const reduce = useReducedMotion();
   const wrap = useRef<HTMLDivElement>(null);
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const onKeys = items.filter((i) => i.on).map((i) => i.key);
-  const solo = onKeys.length === 1 ? onKeys[0] : null;
+  const committedSolo = onKeys.length === 1 ? onKeys[0] : null;
+  const [pending, run, flush] = useDeferredCommit<string>(committedSolo ?? "", reduce);
+  const solo = pending ?? committedSolo;
+  const allKey = items[0]?.key;
+  /** Where the capsule will end up after this tap, when that is a single chip; else null. */
+  const predict = (key: string) => {
+    if (!solo) return null; // coming from several on: no slide
+    if (key === solo) return !single && key !== allKey ? allKey : null; // turning the only filter off → All
+    return single || key === allKey || solo === allKey ? key : null; // otherwise it joins a multi-selection
+  };
+  const tap = (item: ChipItem) => {
+    const target = predict(item.key);
+    if (target) return run(target, item.onClick);
+    flush();
+    item.onClick();
+  };
   const [box, setBox] = useState<Box | null>(null);
   // Slide only from one solo choice to another; jump when appearing or coming back from multi.
   const lastSolo = useRef<string | null>(null);
@@ -132,7 +187,8 @@ export function ChipGroup({ items }: { items: ChipItem[] }) {
         />
       )}
       {items.map((item) => {
-        const own = item.on && !solo; // filled by itself when several are on
+        const on = pending ? item.key === pending : item.on;
+        const own = on && !solo; // filled by itself when several are on
         // Text turns white as the sliding capsule arrives, not before; fills and losses are instant.
         const arriving = solo === item.key && prevSolo !== null && prevSolo !== solo && !reduce;
         return (
@@ -144,10 +200,10 @@ export function ChipGroup({ items }: { items: ChipItem[] }) {
             }}
             type="button"
             data-segment
-            aria-pressed={item.on}
-            onClick={item.onClick}
+            aria-pressed={on}
+            onClick={() => tap(item)}
             className={`relative min-h-9 rounded-full px-3.5 text-[0.8125rem] font-semibold ring-1 ring-inset transition-transform duration-150 active:scale-[0.96] ${
-              item.on ? "text-on-ink ring-transparent" : "text-ink ring-line hover:bg-card"
+              on ? "text-on-ink ring-transparent" : "text-ink ring-line hover:bg-card"
             } ${own ? "bg-ink" : ""}`}
             style={arriving ? { transition: "color 140ms 110ms, transform 150ms" } : undefined}
           >

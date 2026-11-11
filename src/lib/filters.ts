@@ -21,29 +21,33 @@ export interface Filters {
 
 const list = <T extends string>(v: string | null) => (v ? (v.split(",").filter(Boolean) as T[]) : []);
 
+function parseFilters(params: Pick<URLSearchParams, "get" | "getAll">): Filters {
+  return {
+    range: (params.get("range") as RangePreset) ?? "7d",
+    from: params.get("from") ?? undefined,
+    to: params.get("to") ?? undefined,
+    channels: list<Channel>(params.get("channels")),
+    sentiments: list<Sentiment>(params.get("sentiments")),
+    categories: (params.get("categories") ?? "").split(",").filter(Boolean).map(Number).filter(Number.isInteger),
+    voice: (["owned", "earned"] as const).find((v) => v === params.get("voice")),
+    keywords: params.getAll("kw"),
+    paid: (["paid", "organic"] as const).find((v) => v === params.get("paid")),
+  };
+}
+
 /** Dashboard filter lives in the URL: shareable links, and the AI assistant reads the same state. */
 export function useFilters() {
   const params = useSearchParams();
   const pathname = usePathname();
 
-  const filters = useMemo<Filters>(
-    () => ({
-      range: (params.get("range") as RangePreset) ?? "7d",
-      from: params.get("from") ?? undefined,
-      to: params.get("to") ?? undefined,
-      channels: list<Channel>(params.get("channels")),
-      sentiments: list<Sentiment>(params.get("sentiments")),
-      categories: (params.get("categories") ?? "").split(",").filter(Boolean).map(Number).filter(Number.isInteger),
-      voice: (["owned", "earned"] as const).find((v) => v === params.get("voice")),
-      keywords: params.getAll("kw"),
-      paid: (["paid", "organic"] as const).find((v) => v === params.get("paid")),
-    }),
-    [params],
-  );
+  const filters = useMemo(() => parseFilters(params), [params]);
 
   const setFilters = useCallback(
-    (patch: Partial<Filters>) => {
-      const next = { ...filters, ...patch };
+    (patch: Partial<Filters> | ((current: Filters) => Partial<Filters>)) => {
+      // Read the live URL, not this render's copy: controls commit after their slide, so two quick
+      // changes in different controls must not overwrite each other.
+      const current = parseFilters(new URLSearchParams(window.location.search));
+      const next = { ...current, ...(typeof patch === "function" ? patch(current) : patch) };
       const q = new URLSearchParams();
       q.set("range", next.range);
       if (next.range === "custom" && next.from && next.to) {
@@ -60,7 +64,7 @@ export function useFilters() {
       // so the segmented thumb and chip capsule start sliding on the same frame as the tap.
       window.history.replaceState(null, "", `${pathname}?${q.toString()}`);
     },
-    [filters, pathname],
+    [pathname],
   );
 
   return { filters, setFilters };

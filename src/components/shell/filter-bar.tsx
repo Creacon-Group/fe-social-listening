@@ -67,7 +67,7 @@ function KeywordChoices() {
             key: `k:${k.keyword}`,
             label: k.total ? `${k.keyword} (${k.total.toLocaleString("en-GB")})` : k.keyword,
             on: filters.keywords.includes(k.keyword),
-            onClick: () => setFilters({ keywords: toggle(filters.keywords, k.keyword) }),
+            onClick: () => setFilters((f) => ({ keywords: toggle(f.keywords, k.keyword) })),
           })),
         ]}
       />
@@ -84,6 +84,7 @@ function FilterChoices() {
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Owned or earned</legend>
         <ChipGroup
+          single
           items={[
             { key: "all", label: "All posts", on: !filters.voice, onClick: () => setFilters({ voice: undefined }) },
             { key: "owned", label: "Owned (brand accounts)", on: filters.voice === "owned", onClick: () => setFilters({ voice: "owned" }) },
@@ -101,9 +102,9 @@ function FilterChoices() {
                 key: `c${c.id}`,
                 label: c.name,
                 on: filters.categories.includes(c.id),
-                onClick: () => setFilters({ categories: toggle(filters.categories, c.id) }),
+                onClick: () => setFilters((f) => ({ categories: toggle(f.categories, c.id) })),
               })),
-              { key: "c0", label: "No topic", on: filters.categories.includes(0), onClick: () => setFilters({ categories: toggle(filters.categories, 0) }) },
+              { key: "c0", label: "No topic", on: filters.categories.includes(0), onClick: () => setFilters((f) => ({ categories: toggle(f.categories, 0) })) },
             ]}
           />
         </fieldset>
@@ -117,7 +118,7 @@ function FilterChoices() {
               key: c,
               label: CHANNEL_LABEL[c],
               on: filters.channels.includes(c),
-              onClick: () => setFilters({ channels: toggle(filters.channels, c) }),
+              onClick: () => setFilters((f) => ({ channels: toggle(f.channels, c) })),
             })),
           ]}
         />
@@ -131,7 +132,7 @@ function FilterChoices() {
               key: x,
               label: SENTIMENT_LABEL[x],
               on: filters.sentiments.includes(x),
-              onClick: () => setFilters({ sentiments: toggle(filters.sentiments, x) }),
+              onClick: () => setFilters((f) => ({ sentiments: toggle(f.sentiments, x) })),
             })),
           ]}
         />
@@ -139,6 +140,7 @@ function FilterChoices() {
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Paid or organic</legend>
         <ChipGroup
+          single
           items={[
             { key: "all", label: "All authors", on: !filters.paid, onClick: () => setFilters({ paid: undefined }) },
             { key: "paid", label: "Paid", on: filters.paid === "paid", onClick: () => setFilters({ paid: "paid" }) },
@@ -283,13 +285,13 @@ export function FilterBar({ projectId }: { projectId: number }) {
         <span className="flex flex-wrap items-center gap-1.5">
           <AnimatePresence initial={false}>
             {filters.channels.map((c) => (
-              <ActiveChip key={c} label={CHANNEL_LABEL[c]} onRemove={() => setFilters({ channels: toggle(filters.channels, c) })} />
+              <ActiveChip key={c} label={CHANNEL_LABEL[c]} onRemove={() => setFilters((f) => ({ channels: toggle(f.channels, c) }))} />
             ))}
             {filters.categories.map((id) => (
               <ActiveChip
                 key={`cat-${id}`}
                 label={categoryName(id)}
-                onRemove={() => setFilters({ categories: toggle(filters.categories, id) })}
+                onRemove={() => setFilters((f) => ({ categories: toggle(f.categories, id) }))}
               />
             ))}
             {filters.voice && (
@@ -303,13 +305,13 @@ export function FilterBar({ projectId }: { projectId: number }) {
               <ActiveChip key="paid" label={filters.paid === "paid" ? "Paid" : "Organic"} onRemove={() => setFilters({ paid: undefined })} />
             )}
             {filters.keywords.map((k) => (
-              <ActiveChip key={`kw-${k}`} label={k} onRemove={() => setFilters({ keywords: toggle(filters.keywords, k) })} />
+              <ActiveChip key={`kw-${k}`} label={k} onRemove={() => setFilters((f) => ({ keywords: toggle(f.keywords, k) }))} />
             ))}
             {filters.sentiments.map((s) => (
               <ActiveChip
                 key={s}
                 label={SENTIMENT_LABEL[s]}
-                onRemove={() => setFilters({ sentiments: toggle(filters.sentiments, s) })}
+                onRemove={() => setFilters((f) => ({ sentiments: toggle(f.sentiments, s) }))}
               />
             ))}
           </AnimatePresence>
