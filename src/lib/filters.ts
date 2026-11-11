@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import type { Channel, PaidFilter, RangePreset, Sentiment, Voice } from "./types";
 
@@ -24,7 +24,6 @@ const list = <T extends string>(v: string | null) => (v ? (v.split(",").filter(B
 /** Dashboard filter lives in the URL: shareable links, and the AI assistant reads the same state. */
 export function useFilters() {
   const params = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const filters = useMemo<Filters>(
@@ -57,9 +56,11 @@ export function useFilters() {
       if (next.voice) q.set("voice", next.voice);
       for (const k of next.keywords) q.append("kw", k); // keywords can contain commas
       if (next.paid) q.set("paid", next.paid);
-      router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+      // Native history update: useSearchParams syncs at once, with no server round trip,
+      // so the segmented thumb and chip capsule start sliding on the same frame as the tap.
+      window.history.replaceState(null, "", `${pathname}?${q.toString()}`);
     },
-    [filters, pathname, router],
+    [filters, pathname],
   );
 
   return { filters, setFilters };
