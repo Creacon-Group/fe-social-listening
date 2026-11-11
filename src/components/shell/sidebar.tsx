@@ -93,12 +93,39 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
         </span>
       </div>
 
-      {/* Static project label: each deployment serves one project, so no picker. */}
+      {/* Picker only when the user can see more than one project; otherwise a static label. */}
       <div className="mt-5 px-2.5">
-        <span className="t-caption mb-1 block text-muted">Project</span>
-        <p className="flex min-h-10 items-center truncate rounded-lg bg-card px-3 text-sm font-semibold text-ink ring-1 ring-line ring-inset">
-          {projects?.find((p) => p.id === projectId)?.name ?? "\u00a0"}
-        </p>
+        {projects && projects.length > 1 ? (
+          <>
+            <label htmlFor="project-picker" className="t-caption mb-1 block text-muted">
+              Project
+            </label>
+            <select
+              id="project-picker"
+              value={projectId}
+              onChange={(e) => {
+                // Same page in the other project; filters are dropped because brands differ per project.
+                const slug = pathname.split("/")[3] ?? "overview";
+                onNavigate?.();
+                router.push(`/projects/${e.target.value}/${slug}`);
+              }}
+              className="min-h-10 w-full truncate rounded-lg bg-card px-3 text-sm font-semibold text-ink ring-1 ring-line ring-inset"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : (
+          <>
+            <span className="t-caption mb-1 block text-muted">Project</span>
+            <p className="flex min-h-10 items-center truncate rounded-lg bg-card px-3 text-sm font-semibold text-ink ring-1 ring-line ring-inset">
+              {projects?.find((p) => p.id === projectId)?.name ?? "\u00a0"}
+            </p>
+          </>
+        )}
       </div>
 
       <nav aria-label="Menu" className="mt-5 space-y-4">
