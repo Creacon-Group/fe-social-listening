@@ -8,7 +8,8 @@ import { btnPrimary, inputBase, Notice, PageHeader, Panel, Skeleton } from "@/co
 import { apiSend, fetcher } from "@/lib/api";
 import { useFilters } from "@/lib/filters";
 import { fmtPeriod } from "@/lib/format";
-import { useMe, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
+import { useProjectId } from "@/lib/project";
 import type { ReportSettings } from "@/lib/types";
 
 const monthLabel = (ym: string) =>
@@ -129,10 +130,10 @@ function SettingsForm({ projectId, settings, canEdit }: { projectId: number; set
 
 export default function ReportsPage() {
   const projectId = useProjectId();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const { filters } = useFilters();
   const { data: settings, error } = useSWR<ReportSettings>(`/api/projects/${projectId}/reports/settings`, fetcher);
-  const canEdit = me?.role === "ADMIN" || me?.role === "SUPERADMIN";
+  const canEdit = can("settings.manage");
   const custom = filters.range === "custom" && filters.from && filters.to;
 
   return (

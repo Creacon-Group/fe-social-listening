@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Notice, PageHeader, Panel, Skeleton } from "@/components/ui";
 import { apiSend } from "@/lib/api";
-import { useMe, useProjectId, useSettings } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
+import { useProjectId, useSettings } from "@/lib/project";
 import type { ProjectSettings } from "@/lib/types";
 
 function Choice({
@@ -34,10 +35,10 @@ function Choice({
 
 export default function SettingsPage() {
   const projectId = useProjectId();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const { data, mutate } = useSettings(projectId);
   const [error, setError] = useState<string | null>(null);
-  const canEdit = me?.role === "ADMIN" || me?.role === "SUPERADMIN";
+  const canEdit = can("settings.manage");
 
   async function save(patch: Partial<ProjectSettings>) {
     setError(null);
@@ -54,7 +55,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Project settings" />
-      {!canEdit && me && <Notice>Only admins can change these settings.</Notice>}
+      {!canEdit && <Notice>You can view these settings but not change them.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
       {!data ? (
         <Skeleton className="h-64" />

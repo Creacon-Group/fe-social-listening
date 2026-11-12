@@ -2,11 +2,15 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { Forbidden } from "@/components/forbidden";
 import { Drawer } from "@/components/overlay";
+import { Skeleton } from "@/components/ui";
+import { ApiError } from "@/lib/api";
 import { useBusy } from "@/lib/busy";
+import { canOpen, useAccess } from "@/lib/permissions";
 import { useProjectId } from "@/lib/project";
 import { FilterBar, Status } from "./filter-bar";
-import { NavContent, Sidebar, useCurrentPageLabel } from "./sidebar";
+import { firstAllowed, NavContent, Sidebar, useCurrentPageLabel } from "./sidebar";
 
 function MenuIcon() {
   return (
@@ -32,7 +36,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const projectId = useProjectId();
   const pathname = usePathname();
   const pageLabel = useCurrentPageLabel();
-  const showFilters = !["/upload", "/credits", "/categories", "/settings", "/geo"].some((p) => pathname.endsWith(p));
+  const slug = pathname.split("/")[3] ?? "";
+  const { data: access, error: accessError } = useAccess(projectId);
+  const notMember = accessError instanceof ApiError && (accessError.status === 404 || accessError.status === 403);
+  const home = firstAllowed(access);
+  // The project index redirects to `home`; with nothing to open it shows 403 instead.
+  const denied = notMember || (!!access && (!canOpen(slug, access) || (!slug && !home)));
+  const showFilters =
+    !!access &&
+    !denied &&
+    !["/upload", "/credits", "/categories", "/settings", "/geo", "/admin-projects", "/admin-users"].some((p) => pathname.endsWith(p));
   const scrolled = useScrolled();
   const pastTitle = useScrolled(56);
   const busy = useBusy(250);
@@ -73,7 +86,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main data-busy={busy && showFilters} className="busy-fade space-y-5 px-4 pb-10 pt-4 md:px-8 md:pt-4">
-          {children}
+          {denied ? (
+            <Forbidden
+              kind={notMember ? "project" : "page"}
+              homeHref={!notMember && home ? `/projects/${projectId}/${home.slug}` : undefined}
+              homeLabel={home ? `Go to ${home.label}` : undefined}
+            />
+          ) : access ? (
+            children
+          ) : accessError ? (
+            <p className="text-sm text-muted">Couldn&apos;t check your access. Reload the page.</p>
+          ) : (
+            // Pages mount only after access is known, so they never fire calls the user can't make.
+            <div className="space-y-5">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-40" />
+            </div>
+          )}
         </main>
       </div>
 

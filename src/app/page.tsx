@@ -11,7 +11,7 @@ export default function Home() {
   const { data, error } = useSWR<Project[]>("/api/projects", fetcher);
 
   useEffect(() => {
-    if (data?.length) router.replace(`/projects/${data[0].id}/overview`);
+    if (data?.length) router.replace(`/projects/${data[0].id}`);
   }, [data, router]);
 
   return (
