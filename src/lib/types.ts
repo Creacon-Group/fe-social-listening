@@ -425,3 +425,12 @@ export interface AccessUser {
   createdAt: string;
   projects: { projectId: number; name: string; custom: boolean; permissions: import("./permissions").Permission[] }[];
 }
+
+/** GET /admin/projects/:id/keywords: keywords seen in the data and the brands they map to. */
+export interface KeywordRow {
+  keyword: string; // lowercased match key
+  label: string; // as Zanroo sent it
+  mentions: number;
+  brands: { id: number; name: string }[];
+  ignored: boolean;
+}

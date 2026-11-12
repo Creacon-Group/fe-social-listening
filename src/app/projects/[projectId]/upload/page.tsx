@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { upload } from "@vercel/blob/client";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
@@ -46,7 +47,7 @@ function uploadDirect(url: string, file: File, onProgress: (pct: number) => void
   });
 }
 
-function BatchRow({ projectId, batch }: { projectId: number; batch: Batch }) {
+function BatchRow({ projectId, batch, superadmin }: { projectId: number; batch: Batch; superadmin: boolean }) {
   const [open, setOpen] = useState(false);
   const { data: errors } = useSWR<{ items: { id: number; rowRef: string; message: string }[]; total: number }>(
     open ? `/api/projects/${projectId}/ingestion/batches/${batch.id}/errors?pageSize=50` : null,
@@ -70,8 +71,15 @@ function BatchRow({ projectId, batch }: { projectId: number; batch: Batch }) {
       {batch.errorMessage && <p className="mt-1 text-sm text-neg">{batch.errorMessage}</p>}
       {unmapped.length > 0 && (
         <p className="mt-1 text-xs text-muted">
-          Keywords without a brand: {unmapped.map(([k, n]) => `${k} (${fmt(n)})`).join(", ")}. Add them as brand aliases if
-          they belong to a brand.
+          Keywords without a brand: {unmapped.map(([k, n]) => `${k} (${fmt(n)})`).join(", ")}.{" "}
+          {superadmin ? (
+            <Link href={`/projects/${projectId}/admin-projects?project=${projectId}&tab=brands`} className="font-semibold text-ink underline">
+              Map them to brands
+            </Link>
+          ) : (
+            "Ask your admin to map them to brands."
+          )}{" "}
+          Existing mentions are re-tagged when a keyword is mapped.
         </p>
       )}
       {batch.failedRows > 0 && (
@@ -202,7 +210,7 @@ export default function UploadPage() {
         ) : (
           <ul className="divide-y divide-line">
             {batches.map((b) => (
-              <BatchRow key={b.id} projectId={projectId} batch={b} />
+              <BatchRow key={b.id} projectId={projectId} batch={b} superadmin={access?.role === "SUPERADMIN"} />
             ))}
           </ul>
         )}

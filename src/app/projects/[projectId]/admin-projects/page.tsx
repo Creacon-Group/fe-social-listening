@@ -18,10 +18,11 @@ import {
   useAdminProject,
   useAdminProjects,
   usePermissionCatalog,
+  useProjectKeywords,
 } from "@/lib/admin";
 import { fmt } from "@/lib/format";
 import { brandColor, useProjectId } from "@/lib/project";
-import type { AdminBrand, AdminMember, AdminProject } from "@/lib/types";
+import type { AdminBrand, AdminMember, AdminProject, KeywordRow } from "@/lib/types";
 
 const SWATCHES = ["#e11d48", "#f59e0b", "#7c3aed", "#0ea5e9", "#10b981", "#6c8ebf", "#8b95a7", "#c9a35b"];
 const field = `${inputBase} w-full`;
@@ -149,7 +150,7 @@ function NewProjectSheet({ open, onClose, onCreated }: { open: boolean; onClose:
 
         <fieldset className="space-y-2">
           <legend className="text-sm font-semibold">Brands</legend>
-          <p className="t-caption text-muted">At least one of your own; add competitors for share of voice. Keywords can be added later.</p>
+          <p className="t-caption text-muted">At least one of your own. Competitors can also be picked later from the keywords Zanroo actually sends (Brands tab).</p>
           {brands.map((b, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -386,9 +387,167 @@ function BrandSheet({
   );
 }
 
+// ───────── Keywords from the data ─────────
+
+type KeywordView = "unmapped" | "mapped" | "ignored";
+
+function KeywordRowItem({ project, k, view }: { project: AdminProject; k: KeywordRow; view: KeywordView }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      refreshAdmin();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  const assign = (value: string) => {
+    if (!value) return;
+    if (value === "new")
+      return run(() =>
+        apiSend(`/api/admin/projects/${project.id}/brands`, "POST", {
+          name: k.label,
+          isOwn: false,
+          color: SWATCHES[project.brands.length % SWATCHES.length],
+          aliases: [],
+        }),
+      );
+    return run(() => apiSend(`/api/admin/projects/${project.id}/keywords/assign`, "POST", { keyword: k.label, brandId: Number(value) }));
+  };
+
+  return (
+    <li className={`flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 ${busy ? "opacity-50" : ""}`}>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold">{k.label}</span>
+        <span className="t-caption text-muted">
+          {fmt(k.mentions)} mentions
+          {view === "mapped" && ` → ${k.brands.map((b) => b.name).join(", ")}`}
+        </span>
+      </span>
+      {view === "unmapped" && (
+        <span className="flex flex-wrap items-center gap-2">
+          <Select label={`Map ${k.label} to a brand`} hideLabel density="sm" value="" disabled={busy} onChange={(e) => void assign(e.target.value)}>
+            <option value="">Add to brand…</option>
+            {project.brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+                {b.isOwn ? " (own)" : ""}
+              </option>
+            ))}
+            <option value="new">+ New competitor “{k.label}”</option>
+          </Select>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void run(() => apiSend(`/api/admin/projects/${project.id}/keywords/ignore`, "POST", { keyword: k.label, ignored: true }))}
+            className="min-h-9 rounded-lg px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+          >
+            Not a brand
+          </button>
+        </span>
+      )}
+      {view === "ignored" && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void run(() => apiSend(`/api/admin/projects/${project.id}/keywords/ignore`, "POST", { keyword: k.label, ignored: false }))}
+          className="min-h-9 rounded-lg px-3 text-sm font-semibold hover:bg-surface"
+        >
+          Restore
+        </button>
+      )}
+      {error && (
+        <p role="alert" className="basis-full text-xs text-neg">
+          {error}
+        </p>
+      )}
+    </li>
+  );
+}
+
+function KeywordsPanel({ project }: { project: AdminProject }) {
+  const { data, error } = useProjectKeywords(project.id);
+  const [view, setView] = useState<KeywordView>("unmapped");
+  const groups: Record<KeywordView, KeywordRow[]> = {
+    unmapped: data?.filter((k) => !k.brands.length && !k.ignored) ?? [],
+    mapped: data?.filter((k) => k.brands.length > 0) ?? [],
+    ignored: data?.filter((k) => !k.brands.length && k.ignored) ?? [],
+  };
+  const unmappedMentions = groups.unmapped.reduce((n, k) => n + k.mentions, 0);
+
+  return (
+    <section className="mt-6 border-t border-line pt-5">
+      <h3 className="t-headline">Keywords in the data</h3>
+      <p className="t-caption mt-1 text-muted">
+        From Zanroo&apos;s Keyword column, across uploads and the webhook. Mapping a keyword re-tags mentions already stored, so
+        charts update without re-uploading.
+      </p>
+      {error ? (
+        <Notice tone="error">Couldn&apos;t load keywords: {error.message}</Notice>
+      ) : !data ? (
+        <Skeleton className="mt-3 h-32" />
+      ) : !data.length ? (
+        <p className="mt-3 text-sm text-muted">No data yet. Keywords appear here after the first upload or webhook message.</p>
+      ) : (
+        <>
+          {groups.unmapped.length > 0 && (
+            <p className="mt-3 rounded-lg bg-neg/10 px-3 py-2 text-sm text-neg">
+              {groups.unmapped.length} keywords ({fmt(unmappedMentions)} keyword mentions) don&apos;t count for any brand yet.
+            </p>
+          )}
+          <div className="mt-3">
+            <Segmented
+              label="Keyword filter"
+              size="sm"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: "unmapped", label: `Unmapped (${groups.unmapped.length})` },
+                { value: "mapped", label: `Mapped (${groups.mapped.length})` },
+                { value: "ignored", label: `Not a brand (${groups.ignored.length})` },
+              ]}
+            />
+          </div>
+          {groups[view].length ? (
+            <ul className="mt-2 max-h-[28rem] divide-y divide-line overflow-y-auto">
+              {groups[view].map((k) => (
+                <KeywordRowItem key={k.keyword} project={project} k={k} view={view} />
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">{view === "unmapped" ? "Every keyword is mapped or ignored." : "None."}</p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 function BrandsTab({ project }: { project: AdminProject }) {
   const [editing, setEditing] = useState<AdminBrand | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retagging, setRetagging] = useState(false);
+  const [retagged, setRetagged] = useState(false);
+
+  async function retagAll() {
+    setRetagging(true);
+    setError(null);
+    try {
+      await apiSend(`/api/admin/projects/${project.id}/brands/retag`, "POST");
+      refreshAdmin();
+      setRetagged(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setRetagging(false);
+    }
+  }
 
   async function remove(b: AdminBrand) {
     setError(null);
@@ -432,9 +591,20 @@ function BrandsTab({ project }: { project: AdminProject }) {
         ))}
       </ul>
       <ErrorText text={error} />
-      <button onClick={() => setEditing("new")} className={btnQuiet}>
-        Add brand
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={() => setEditing("new")} className={btnQuiet}>
+          Add brand
+        </button>
+        <button
+          onClick={() => void retagAll()}
+          disabled={retagging}
+          title="Recompute every brand's mentions from the stored keywords"
+          className="min-h-10 rounded-full px-4 text-sm font-semibold text-muted hover:text-ink disabled:opacity-40"
+        >
+          {retagging ? "Re-tagging…" : retagged ? "Re-tagged ✓" : "Re-apply keywords to all data"}
+        </button>
+      </div>
+      <KeywordsPanel project={project} />
       {editing && (
         <BrandSheet
           key={editing === "new" ? "new" : editing.id}
@@ -560,9 +730,9 @@ function MembersTab({ project }: { project: AdminProject }) {
 
 type Tab = "details" | "brands" | "members";
 
-function ProjectDetail({ id }: { id: number }) {
+function ProjectDetail({ id, initialTab }: { id: number; initialTab?: Tab }) {
   const { data: project, error } = useAdminProject(id);
-  const [tab, setTab] = useState<Tab>("members");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "members");
 
   if (error) return <Notice tone="error">Couldn&apos;t load the project: {error.message}</Notice>;
   if (!project) return <Skeleton className="h-80" />;
@@ -602,6 +772,7 @@ export default function AdminProjectsPage() {
   const { data: projects, error } = useAdminProjects();
   const [creating, setCreating] = useState(false);
   const selected = Number(params.get("project")) || projects?.[0]?.id || null;
+  const tabParam = (["members", "brands", "details"] as const).find((t) => t === params.get("tab"));
   const select = (id: number) => router.replace(`/projects/${projectId}/admin-projects?project=${id}`, { scroll: false });
 
   return (
@@ -640,7 +811,7 @@ export default function AdminProjectsPage() {
               ))}
             </ul>
           </nav>
-          {selected ? <ProjectDetail key={selected} id={selected} /> : <Notice>No projects yet. Create the first one.</Notice>}
+          {selected ? <ProjectDetail key={selected} id={selected} initialTab={tabParam} /> : <Notice>No projects yet. Create the first one.</Notice>}
         </div>
       )}
 

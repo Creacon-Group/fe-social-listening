@@ -2,7 +2,7 @@
 
 import useSWR, { mutate as globalMutate } from "swr";
 import { fetcher } from "./api";
-import type { AccessUser, AdminProject, AdminProjectRow, PermissionCatalog, Role } from "./types";
+import type { AccessUser, AdminProject, AdminProjectRow, KeywordRow, PermissionCatalog, Role } from "./types";
 
 export const ROLE_LABEL: Record<Role, string> = {
   SUPERADMIN: "Superadmin",
@@ -17,6 +17,7 @@ export const fullAccess = (role: Role) => role === "ADMIN" || role === "SUPERADM
 export const usePermissionCatalog = () => useSWR<PermissionCatalog>("/api/admin/permissions", fetcher);
 export const useAdminProjects = () => useSWR<AdminProjectRow[]>("/api/admin/projects", fetcher);
 export const useAdminProject = (id: number | null) => useSWR<AdminProject>(id ? `/api/admin/projects/${id}` : null, fetcher);
+export const useProjectKeywords = (id: number) => useSWR<KeywordRow[]>(`/api/admin/projects/${id}/keywords`, fetcher);
 export const useAccessUsers = () => useSWR<AccessUser[]>("/api/admin/users/access", fetcher);
 
 /** After any membership/project change: refresh admin lists, the project picker and the user's own access. */
