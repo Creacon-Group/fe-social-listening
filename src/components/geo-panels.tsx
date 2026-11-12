@@ -12,6 +12,8 @@ import type { GeoSummary } from "@/lib/geo-types";
 const pct = (v: number | null) => (v === null ? "–" : fmtPct(v));
 const monthName = (period: string) =>
   new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${period}-01T00:00:00Z`));
+/** "Run November 2026", or the manual run's own label ("Manual run, 12 Nov, 09:01 WIB (5 prompts)"). */
+const runName = (s: GeoSummary) => (s.run.kind === "adhoc" ? (s.run.label ?? "Manual run") : `Run ${monthName(s.run.period)}`);
 
 /** Latest monthly AI visibility run not after `periodEnd` (YYYY-MM-DD). null = no run yet. */
 export function useGeoSummary(projectId: number, periodEnd?: string) {
@@ -23,7 +25,7 @@ export function useGeoSummary(projectId: number, periodEnd?: string) {
 function Aside({ projectId, s }: { projectId: number; s?: GeoSummary | null }) {
   return (
     <Link href={`/projects/${projectId}/geo`} className="font-semibold text-ink underline underline-offset-2">
-      {s ? `Run ${monthName(s.run.period)}` : "AI visibility"}
+      {s ? runName(s) : "AI visibility"}
     </Link>
   );
 }
@@ -34,7 +36,7 @@ const Empty = () => (
 
 const Note = ({ s }: { s: GeoSummary }) => (
   <p className="mt-3 text-xs text-muted">
-    How Gemini and GPT answer consumer questions, from the monthly AI benchmark ({s.run.prompts} prompts). Not affected by the filters above.
+    How Gemini and GPT answer consumer questions, from {s.run.kind === "adhoc" ? "a manual run (no monthly benchmark yet)" : "the monthly AI benchmark"} ({s.run.prompts} prompts). Not affected by the filters above.
   </p>
 );
 
@@ -155,7 +157,7 @@ export function GeoCompetitorsPanel({ projectId, periodEnd }: { projectId: numbe
             </table>
           </div>
           <p className="mt-3 text-xs text-muted">
-            {g.label}, {g.validResponses} answers, run {monthName(data.run.period)}. In AI answers your own brands count as one group, so this is
+            {g.label}, {g.validResponses} answers, {runName(data).replace(/^Run/, "run")}. In AI answers your own brands count as one group, so this is
             not the same split as the social share of voice above. Not affected by the filters above.{" "}
             <Link href={`/projects/${projectId}/geo`} className="font-semibold text-ink underline underline-offset-2">
               Open AI visibility
