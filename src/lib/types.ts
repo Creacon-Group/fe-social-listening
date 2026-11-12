@@ -412,6 +412,8 @@ export interface AdminMember {
 
 /** GET /admin/projects/:id */
 export interface AdminProject extends Omit<AdminProjectRow, "_count"> {
+  mentionCount: number;
+  batchCount: number;
   brands: AdminBrand[];
   members: AdminMember[];
 }

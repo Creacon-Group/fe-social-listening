@@ -240,6 +240,7 @@ function DetailsTab({ project }: { project: AdminProject }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const webhook = typeof window === "undefined" ? "" : `${window.location.origin}/api/webhooks/zanroo/${project.id}`;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -306,7 +307,102 @@ function DetailsTab({ project }: { project: AdminProject }) {
         </Link>
         {msg && <span className={`text-sm ${msg.ok ? "text-pos" : "text-neg"}`}>{msg.text}</span>}
       </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 ring-1 ring-neg/40 ring-inset">
+        <div>
+          <p className="text-sm font-semibold text-neg">Delete project</p>
+          <p className="text-xs text-muted">Permanently removes the project and all its data.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setDeleting(true)}
+          className="min-h-10 rounded-full px-4 text-sm font-semibold text-neg ring-1 ring-neg/50 ring-inset hover:bg-neg/10"
+        >
+          Delete project…
+        </button>
+      </div>
+      {deleting && <DeleteProjectSheet project={project} onClose={() => setDeleting(false)} />}
     </form>
+  );
+}
+
+// ───────── Delete project ─────────
+
+function DeleteProjectSheet({ project, onClose }: { project: AdminProject; onClose: () => void }) {
+  const router = useRouter();
+  const currentId = useProjectId();
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function confirm() {
+    setBusy(true);
+    setError(null);
+    try {
+      await apiSend(`/api/admin/projects/${project.id}`, "DELETE");
+      refreshAdmin();
+      onClose();
+      // The page itself lives under the deleted project's URL: leave it.
+      router.replace(project.id === currentId ? "/" : `/projects/${currentId}/admin-projects`);
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      onClose={busy ? () => undefined : onClose}
+      title={`Delete ${project.name}?`}
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={busy} className={btnQuiet} data-autofocus>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void confirm()}
+            disabled={busy || typed !== "Delete"}
+            className={btnPrimary.replace("bg-ink", "bg-neg").replace("text-on-ink", "text-white")}
+          >
+            {busy ? "Deleting…" : "Delete project"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4 text-sm">
+        <div className="rounded-xl bg-neg/10 p-3 text-neg">
+          <p className="font-semibold">This can&apos;t be undone.</p>
+          <p className="mt-1">Everything in this project is permanently deleted:</p>
+          <ul className="mt-2 list-disc space-y-0.5 pl-5">
+            <li>{fmt(project.mentionCount)} mentions and their topics and brand tags</li>
+            <li>
+              {project.brands.length} brands, {fmt(project.batchCount)} upload/webhook history entries
+            </li>
+            <li>AI insights, Brand assistant chats, AI visibility runs and report settings</li>
+            <li>Access for its {project.members.length} members (their accounts stay)</li>
+          </ul>
+        </div>
+        <p className="text-muted">
+          The Zanroo webhook for this project stops working: messages sent to it are rejected. Remove it on Zanroo&apos;s side too.
+        </p>
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">
+            Type <b className="text-ink">Delete</b> to confirm
+          </span>
+          <input
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+            aria-label="Type Delete to confirm"
+            className={field}
+          />
+        </label>
+        {busy && <p className="text-muted">Deleting data, this can take a minute for large projects…</p>}
+        <ErrorText text={error} />
+      </div>
+    </Sheet>
   );
 }
 
