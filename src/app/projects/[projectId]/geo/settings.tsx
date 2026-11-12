@@ -90,10 +90,10 @@ function SettingsForm({ url: key, data, canEdit, onSaved }: { url: string; data:
       <Panel title="Brand profile">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Target brand name in reports">
-            <input className={`${inputBase} w-full`} disabled={off} value={draft.profile.targetName ?? ""} placeholder="IOH" onChange={(e) => setProfile({ targetName: e.target.value })} />
+            <input className={`${inputBase} w-full`} disabled={off} value={draft.profile.targetName ?? ""} placeholder="e.g. Acme" onChange={(e) => setProfile({ targetName: e.target.value })} />
           </Field>
           <Field label="Industry">
-            <input className={`${inputBase} w-full`} disabled={off} value={draft.profile.industry ?? ""} placeholder="Telekomunikasi seluler" onChange={(e) => setProfile({ industry: e.target.value })} />
+            <input className={`${inputBase} w-full`} disabled={off} value={draft.profile.industry ?? ""} placeholder="e.g. Consumer goods" onChange={(e) => setProfile({ industry: e.target.value })} />
           </Field>
           <Field label="Market">
             <input className={`${inputBase} w-full`} disabled={off} value={draft.profile.market ?? ""} placeholder="Indonesia" onChange={(e) => setProfile({ market: e.target.value })} />
@@ -118,7 +118,7 @@ function SettingsForm({ url: key, data, canEdit, onSaved }: { url: string; data:
                 className={`${inputBase} w-full`}
                 disabled={off}
                 value={domains[b.id] ?? ""}
-                placeholder="e.g. im3.id, indosatooredoo.com"
+                placeholder="e.g. acme.com, acme.co.id"
                 onChange={(e) => setDomains({ ...domains, [b.id]: e.target.value })}
               />
             </Field>
