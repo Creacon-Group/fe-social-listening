@@ -8,7 +8,8 @@ import { btnPrimary, Notice, PageHeader, Panel, SentimentChip, Skeleton } from "
 import { apiSend, fetcher } from "@/lib/api";
 import { filterBody, filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmtDateTime, fmtPeriod, webUrl } from "@/lib/format";
-import { useMe, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
+import { useProjectId } from "@/lib/project";
 import type { Insight, InsightSummary, Trend } from "@/lib/types";
 
 const ymd = (iso: string) => iso.slice(0, 10);
@@ -75,7 +76,7 @@ function InsightBody({ insight }: { insight: Insight }) {
 export default function InsightsPage() {
   const projectId = useProjectId();
   const { filters } = useFilters();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const trend = useSWR<Trend>(`/api/projects/${projectId}/analytics/trend?${filterQuery(filters)}`, fetcher, {
     keepPreviousData: true,
   });
@@ -91,7 +92,7 @@ export default function InsightsPage() {
     : undefined;
   const selectedId = picked ?? forPeriod?.id ?? null;
   const detail = useSWR<Insight>(selectedId ? `${listKey}/${selectedId}` : null, fetcher);
-  const canGenerate = me && me.role !== "VIEWER";
+  const canGenerate = can("insights.generate");
 
   async function generate() {
     setBusy(true);

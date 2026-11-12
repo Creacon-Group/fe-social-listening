@@ -9,7 +9,8 @@ import { apiSend, fetcher } from "@/lib/api";
 import { downloadFile } from "@/lib/download";
 import { filterBody, filterQuery, periodFor, useFilters } from "@/lib/filters";
 import { fmtPeriod } from "@/lib/format";
-import { useDataAsOf, useMe } from "@/lib/project";
+import { useDataAsOf } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
 import type { ReportSettings } from "@/lib/types";
 
 type Busy = "pdf" | "excel" | "email" | null;
@@ -23,7 +24,7 @@ export function ReportActions({
   compact?: boolean;
 }) {
   const { filters } = useFilters();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const { data: settings } = useSWR<ReportSettings>(
     `/api/projects/${projectId}/reports/settings`,
     fetcher,
@@ -39,7 +40,8 @@ export function ReportActions({
   const phone = !useMedia("(min-width: 768px)");
   const { data: asOf } = useDataAsOf(projectId);
   const period = periodFor(filters, asOf?.dataAsOfWib);
-  const canSend = me && me.role !== "VIEWER";
+  const canSend = can("reports.email");
+  const canExport = can("reports.export");
   const q = filterQuery(filters);
 
   async function run(kind: Exclude<Busy, null>) {
@@ -70,6 +72,7 @@ export function ReportActions({
   }
 
   const recipients = settings?.recipients ?? [];
+  if (!canExport && !canSend) return null;
 
   return (
     <div className="space-y-2">
@@ -91,25 +94,29 @@ export function ReportActions({
           </button>
           <Sheet open={menu} onClose={closeMenu} title="Export & share">
             <div className="grid gap-2 pb-2">
-              <button
-                data-autofocus
-                onClick={() => {
-                  setMenu(false);
-                  void run("pdf");
-                }}
-                className={btnQuiet}
-              >
-                Export PDF
-              </button>
-              <button
-                onClick={() => {
-                  setMenu(false);
-                  void run("excel");
-                }}
-                className={btnQuiet}
-              >
-                Export Excel
-              </button>
+              {canExport && (
+                <>
+                  <button
+                    data-autofocus
+                    onClick={() => {
+                      setMenu(false);
+                      void run("pdf");
+                    }}
+                    className={btnQuiet}
+                  >
+                    Export PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenu(false);
+                      void run("excel");
+                    }}
+                    className={btnQuiet}
+                  >
+                    Export Excel
+                  </button>
+                </>
+              )}
               {canSend && (
                 <button
                   onClick={() => {
@@ -129,20 +136,24 @@ export function ReportActions({
         </>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => run("pdf")}
-            disabled={busy !== null}
-            className={btnQuiet}
-          >
-            {busy === "pdf" ? "Building PDF…" : "Export PDF"}
-          </button>
-          <button
-            onClick={() => run("excel")}
-            disabled={busy !== null}
-            className={btnQuiet}
-          >
-            {busy === "excel" ? "Building Excel…" : "Export Excel"}
-          </button>
+          {canExport && (
+            <>
+              <button
+                onClick={() => run("pdf")}
+                disabled={busy !== null}
+                className={btnQuiet}
+              >
+                {busy === "pdf" ? "Building PDF…" : "Export PDF"}
+              </button>
+              <button
+                onClick={() => run("excel")}
+                disabled={busy !== null}
+                className={btnQuiet}
+              >
+                {busy === "excel" ? "Building Excel…" : "Export Excel"}
+              </button>
+            </>
+          )}
           {canSend && (
             <button
               onClick={() => setConfirming(true)}

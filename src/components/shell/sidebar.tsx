@@ -6,10 +6,12 @@ import useSWR from "swr";
 import { Select } from "@/components/select";
 import { BetaChip } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
+import { type Access, canOpen, useAccess } from "@/lib/permissions";
 import { useMe } from "@/lib/project";
 import type { Project } from "@/lib/types";
 
-type NavItem = { slug: string; label: string; keepFilters: boolean; superadminOnly?: boolean; beta?: boolean };
+/** Who sees an item is decided by PAGE_PERMISSION in lib/permissions. */
+type NavItem = { slug: string; label: string; keepFilters: boolean; beta?: boolean };
 
 /**
  * Order follows how clients read the dashboard: quick stats first (Summary, then AI Insights),
@@ -52,10 +54,27 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { slug: "upload", label: "Upload data", keepFilters: false },
       { slug: "categories", label: "Topic categories", keepFilters: false },
       { slug: "settings", label: "Project settings", keepFilters: false },
-      { slug: "credits", label: "Assistant credits", keepFilters: false, superadminOnly: true },
+    ],
+  },
+  {
+    group: "Admin",
+    items: [
+      { slug: "admin-projects", label: "Projects & access", keepFilters: false },
+      { slug: "admin-users", label: "Users & roles", keepFilters: false },
+      { slug: "credits", label: "Assistant credits", keepFilters: false },
     ],
   },
 ];
+
+/** Menu groups this user may open, in display order. */
+export function visibleNav(access: Access | undefined) {
+  return NAV.map((g) => ({ ...g, items: g.items.filter((i) => canOpen(i.slug, access)) })).filter((g) => g.items.length);
+}
+
+/** First page this user may open in the project (for redirects and the 403 screen). */
+export function firstAllowed(access: Access | undefined) {
+  return visibleNav(access)[0]?.items[0];
+}
 
 /** Label of the page the user is on, for the phone top bar. */
 export function useCurrentPageLabel() {
@@ -71,6 +90,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
   const router = useRouter();
   const { data: projects } = useSWR<Project[]>("/api/projects", fetcher);
   const { data: me } = useMe();
+  const { data: access } = useAccess(projectId);
   const query = params.toString();
 
   async function logout() {
@@ -78,10 +98,8 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
     router.replace("/login");
   }
 
-  const groups = NAV.map((g) => ({
-    ...g,
-    items: g.items.filter((i) => !i.superadminOnly || me?.role === "SUPERADMIN"),
-  })).filter((g) => g.items.length);
+  // Menus the user has no permission for are hidden; the backend still enforces every call.
+  const groups = visibleNav(access);
 
   return (
     <>
@@ -102,6 +120,7 @@ export function NavContent({ projectId, onNavigate }: { projectId: number; onNav
             value={projectId}
             onChange={(e) => {
               // Same page in the other project; filters are dropped because brands differ per project.
+              // A page they can't open there shows the 403 screen with a way out.
               const slug = pathname.split("/")[3] ?? "overview";
               onNavigate?.();
               router.push(`/projects/${e.target.value}/${slug}`);

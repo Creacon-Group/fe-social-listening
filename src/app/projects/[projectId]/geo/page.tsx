@@ -8,7 +8,8 @@ import { btnPrimary, btnQuiet, Notice, PageHeader } from "@/components/ui";
 import { notifyAiError, isBudgetError } from "@/lib/ai-errors";
 import { apiSend, fetcher } from "@/lib/api";
 import type { GeoBatch, GeoBatchSummary, GeoEstimate, GeoRunRow } from "@/lib/geo-types";
-import { useMe, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
+import { useProjectId } from "@/lib/project";
 import { ManualRun } from "./manual-run";
 import { GeoOverviewTab } from "./overview";
 import { GeoPromptsTab } from "./prompts";
@@ -204,11 +205,11 @@ function RunBar({
 
 export default function GeoPage() {
   const projectId = useProjectId();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const [tab, setTab] = useState<Tab>("overview");
   const [batchId, setBatchId] = useState<number | null>(null);
-  const isAdmin = me?.role === "ADMIN" || me?.role === "SUPERADMIN";
-  const canEdit = isAdmin || me?.role === "ANALYST";
+  const isAdmin = can("settings.manage"); // scheduled runs and GEO settings
+  const canEdit = can("geo.manage");
 
   return (
     <div className="space-y-5">

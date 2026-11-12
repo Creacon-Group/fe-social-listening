@@ -6,7 +6,8 @@ import { Sheet } from "@/components/overlay";
 import { btnPrimary, btnQuiet, inputBase, Notice, PageHeader, Panel, Skeleton } from "@/components/ui";
 import { apiSend, fetcher } from "@/lib/api";
 import { CHANNEL_LABEL, fmt } from "@/lib/format";
-import { brandColor, useCategories, useMe, useProjectId } from "@/lib/project";
+import { brandColor, useCategories, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
 import type { Category, CategoryPreview, ZanrooTagSuggestions } from "@/lib/types";
 
 const SWATCHES = ["#2563eb", "#0f766e", "#c2410c", "#7c3aed", "#db2777", "#ca8a04", "#0891b2", "#4b5563"];
@@ -230,14 +231,14 @@ function Editor({ projectId, initial, onDone }: { projectId: number; initial: Dr
 
 export default function CategoriesPage() {
   const projectId = useProjectId();
-  const { data: me } = useMe();
+  const { data: access, can } = useAccess(projectId);
   const { data: categories, error, mutate } = useCategories(projectId);
   const [editing, setEditing] = useState<Draft | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null);
   const [busyDelete, setBusyDelete] = useState(false);
   const closeDelete = useCallback(() => setDeleting(null), []);
   const editorRef = useRef<HTMLDivElement>(null);
-  const isAdmin = me?.role === "ADMIN" || me?.role === "SUPERADMIN";
+  const isAdmin = can("categories.manage");
 
   const edit = (draft: Draft) => {
     setEditing(draft);
@@ -267,7 +268,7 @@ export default function CategoriesPage() {
         }
       />
 
-      {me && !isAdmin && <Notice>Only admins can change topic categories.</Notice>}
+      {access && !isAdmin && <Notice>You can view topic categories but not change them.</Notice>}
 
       {editing && (
         <div ref={editorRef} className="scroll-mt-24">

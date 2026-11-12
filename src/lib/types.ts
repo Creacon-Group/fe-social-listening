@@ -371,3 +371,57 @@ export interface Topics {
   uncategorized: number;
   topics: Topic[];
 }
+
+// ───────── Admin: projects, members, permissions (superadmin) ─────────
+
+/** GET /admin/permissions */
+export interface PermissionCatalog {
+  permissions: { key: import("./permissions").Permission; group: "Pages" | "Actions"; label: string }[];
+  presets: Record<"ANALYST" | "VIEWER", import("./permissions").Permission[]>;
+}
+
+/** GET /admin/projects */
+export interface AdminProjectRow {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  clientName: string | null;
+  createdAt: string;
+  _count: { members: number; brands: number };
+}
+
+export interface AdminBrand {
+  id: number;
+  name: string;
+  isOwn: boolean;
+  color: string | null;
+  aliases: string[] | null;
+  mentionCount: number;
+}
+
+export interface AdminMember {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  /** false = following the role preset */
+  custom: boolean;
+  permissions: import("./permissions").Permission[];
+}
+
+/** GET /admin/projects/:id */
+export interface AdminProject extends Omit<AdminProjectRow, "_count"> {
+  brands: AdminBrand[];
+  members: AdminMember[];
+}
+
+/** GET /admin/users/access */
+export interface AccessUser {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+  projects: { projectId: number; name: string; custom: boolean; permissions: import("./permissions").Permission[] }[];
+}

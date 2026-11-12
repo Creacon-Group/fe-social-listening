@@ -8,7 +8,8 @@ import { Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Skeleton } fr
 import { apiSend, fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtPeriod, fmtSigned, TYPE_LABEL, webUrl } from "@/lib/format";
-import { useMe, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
+import { useProjectId } from "@/lib/project";
 import type { AccountType, Channel, Influencer, Influencers } from "@/lib/types";
 
 const SORTS = [
@@ -172,7 +173,7 @@ function AuthorTable({
 export default function InfluencersPage() {
   const projectId = useProjectId();
   const { filters } = useFilters();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const [tab, setTab] = useState<Tab>("KOL");
   const [sort, setSort] = useState<(typeof SORTS)[number][0]>("engagements");
   const [channel, setChannel] = useState<"" | Channel>("");
@@ -185,7 +186,7 @@ export default function InfluencersPage() {
   const { data, error, isLoading, mutate } = useSWR<Influencers>(`/api/projects/${projectId}/analytics/influencers?${query}`, fetcher, {
     keepPreviousData: true,
   });
-  const canTag = !!me && me.role !== "VIEWER";
+  const canTag = can("accounts.tag");
 
   const toggle = (k: string) =>
     setSelected((s) => {

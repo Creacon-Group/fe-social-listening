@@ -8,7 +8,8 @@ import { BrandName, Notice, PageHeader, Panel, SentimentBar, SentimentLegend, Sk
 import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { fmt, fmtCompact, fmtDay, fmtPct, fmtPeriod, fmtSigned } from "@/lib/format";
-import { brandColor, useMe, useProjectId } from "@/lib/project";
+import { brandColor, useProjectId } from "@/lib/project";
+import { useAccess } from "@/lib/permissions";
 import type { Topic, Topics } from "@/lib/types";
 
 const tone = (n: number) => (n < 0 ? "text-neg" : n > 0 ? "text-pos" : "text-muted");
@@ -64,12 +65,12 @@ function TopicTrend({ topics }: { topics: Topic[] }) {
 export default function TopicsPage() {
   const projectId = useProjectId();
   const { filters } = useFilters();
-  const { data: me } = useMe();
+  const { can } = useAccess(projectId);
   const mentionsHref = useMentionsHref(projectId);
   const { data, error } = useSWR<Topics>(`/api/projects/${projectId}/analytics/topics?${filterQuery(filters)}`, fetcher, {
     keepPreviousData: true,
   });
-  const isAdmin = me?.role === "ADMIN" || me?.role === "SUPERADMIN";
+  const isAdmin = can("categories.manage");
   const setupHref = `/projects/${projectId}/categories`;
   const days = data ? Math.round((Date.parse(data.period.to) - Date.parse(data.period.from)) / 86_400_000) + 1 : 0;
   const max = Math.max(1, ...(data?.topics.map((t) => t.total) ?? [1]));
