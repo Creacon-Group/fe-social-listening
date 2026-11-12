@@ -205,7 +205,8 @@ export const groupLabel = (model: string, mode: GeoMode) =>
 
 /** GET /geo/summary: latest monthly run not after the period end, compact (null = no run yet). */
 export interface GeoSummary {
-  run: { id: number; period: string; status: GeoBatchStatus; finishedAt: string | null; prompts: number };
+  /** kind "adhoc" = a manual run, shown only while the project has no monthly run yet. */
+  run: { id: number; period: string; kind: "monthly" | "adhoc"; label: string | null; status: GeoBatchStatus; finishedAt: string | null; prompts: number };
   note: string;
   groups: {
     label: string;
