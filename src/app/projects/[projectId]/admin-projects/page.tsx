@@ -124,7 +124,7 @@ function NewProjectSheet({ open, onClose, onCreated }: { open: boolean; onClose:
               setName(e.target.value);
               if (!slugTouched) setSlug(slugify(e.target.value));
             }}
-            placeholder="e.g. CIMB Niaga"
+            placeholder="e.g. Acme Corp"
             className={field}
           />
         </Field>
@@ -431,8 +431,8 @@ function KeywordRowItem({ project, k, view }: { project: AdminProject; k: Keywor
         </span>
       </span>
       {view === "unmapped" && (
-        <span className="flex flex-wrap items-center gap-2">
-          <Select label={`Map ${k.label} to a brand`} hideLabel density="sm" value="" disabled={busy} onChange={(e) => void assign(e.target.value)}>
+        <span className="flex items-center gap-2">
+          <Select className="w-52 shrink-0" label={`Map ${k.label} to a brand`} hideLabel density="sm" value="" disabled={busy} onChange={(e) => void assign(e.target.value)}>
             <option value="">Add to brand…</option>
             {project.brands.map((b) => (
               <option key={b.id} value={b.id}>
@@ -446,7 +446,7 @@ function KeywordRowItem({ project, k, view }: { project: AdminProject; k: Keywor
             type="button"
             disabled={busy}
             onClick={() => void run(() => apiSend(`/api/admin/projects/${project.id}/keywords/ignore`, "POST", { keyword: k.label, ignored: true }))}
-            className="min-h-9 rounded-lg px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+            className="min-h-9 w-24 shrink-0 rounded-lg px-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
           >
             Not a brand
           </button>
@@ -585,12 +585,13 @@ function DeleteBrandSheet({ project, brand, onClose }: { project: AdminProject; 
         </p>
 
         <label className={`flex gap-3 rounded-xl p-3 ring-1 ring-inset ${mode === "merge" ? "ring-ink" : "ring-line"} ${others.length ? "cursor-pointer" : "opacity-50"}`}>
-          <input type="radio" name="brand-delete" checked={mode === "merge"} disabled={!others.length} onChange={() => setMode("merge")} className="mt-1 accent-[var(--ink)]" />
+          <input type="radio" name="brand-delete" checked={mode === "merge"} disabled={!others.length} onChange={() => setMode("merge")} className="mt-1 self-start accent-[var(--ink)]" />
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">Merge into another brand</span>
             <span className="block text-muted">
-              Same brand under another name (e.g. BANK BRI → BRI). Its keywords ({keywords.join(", ")}) move to the target, and its
-              mentions count there.
+              Same brand under another name (e.g. &ldquo;Brand A Official&rdquo; → &ldquo;Brand A&rdquo;). Its{" "}
+              {keywords.length === 1 ? "keyword moves" : `${keywords.length} keywords move`} to the target, and its mentions count
+              there.
             </span>
             {mode === "merge" && (
               <Select label="Merge into" className="mt-2" value={target} onChange={(e) => setTarget(e.target.value)}>
@@ -606,7 +607,7 @@ function DeleteBrandSheet({ project, brand, onClose }: { project: AdminProject; 
         </label>
 
         <label className={`flex cursor-pointer gap-3 rounded-xl p-3 ring-1 ring-inset ${mode === "delete" ? "ring-neg" : "ring-line"}`}>
-          <input type="radio" name="brand-delete" checked={mode === "delete"} onChange={() => setMode("delete")} className="mt-1 accent-[var(--neg)]" />
+          <input type="radio" name="brand-delete" checked={mode === "delete"} onChange={() => setMode("delete")} className="mt-1 self-start accent-[var(--neg)]" />
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">Delete, not relevant to this project</span>
             <span className="block text-muted">The brand disappears from share of voice, competitor charts and reports.</span>
