@@ -17,9 +17,9 @@ import { useProjectId } from "@/lib/project";
 import type { ChatSession, StoredChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = [
-  "Compare share of voice for Indosat and Tri against competitors",
+  "Compare our share of voice against competitors",
   "What negative issues come up most?",
-  "Show the 5 Tri mentions with the most engagement",
+  "Show the 5 mentions with the most engagement",
 ];
 
 const TOOL_LABEL: Record<string, string> = {
