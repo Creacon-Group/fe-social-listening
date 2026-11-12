@@ -241,7 +241,10 @@ function DetailsTab({ project }: { project: AdminProject }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const webhook = typeof window === "undefined" ? "" : `${window.location.origin}/api/webhooks/zanroo/${project.id}`;
+  // Point Zanroo at the backend itself. Without NEXT_PUBLIC_API_PUBLIC_URL this falls back to the
+  // dashboard domain, which also works (its /api is forwarded to the backend) but adds a hop.
+  const apiBase = (process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "").replace(/\/+$/, "");
+  const webhook = `${apiBase || (typeof window === "undefined" ? "" : window.location.origin)}/api/webhooks/zanroo/${project.id}`;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
