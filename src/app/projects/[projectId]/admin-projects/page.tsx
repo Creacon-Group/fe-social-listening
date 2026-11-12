@@ -529,6 +529,120 @@ function KeywordsPanel({ project }: { project: AdminProject }) {
   );
 }
 
+/** Merge a brand into another (its keywords and tags move over) or delete it outright. */
+function DeleteBrandSheet({ project, brand, onClose }: { project: AdminProject; brand: AdminBrand; onClose: () => void }) {
+  const others = project.brands.filter((b) => b.id !== brand.id);
+  const [mode, setMode] = useState<"merge" | "delete">(others.length ? "merge" : "delete");
+  const [target, setTarget] = useState(String(others.find((b) => b.isOwn === brand.isOwn)?.id ?? others[0]?.id ?? ""));
+  const [ignore, setIgnore] = useState(true);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const keywords = [brand.name, ...(brand.aliases ?? [])];
+  const targetBrand = others.find((b) => String(b.id) === target);
+  const needsTyping = mode === "delete" && brand.mentionCount > 0;
+  const ready = mode === "merge" ? !!targetBrand : !needsTyping || typed.trim() === brand.name;
+  const lastOwn = brand.isOwn && !others.some((b) => b.isOwn);
+
+  async function confirm() {
+    setBusy(true);
+    setError(null);
+    const q = mode === "merge" ? `mergeInto=${target}` : `ignoreKeywords=${ignore ? 1 : 0}`;
+    try {
+      await apiSend(`/api/admin/projects/${project.id}/brands/${brand.id}?${q}`, "DELETE");
+      refreshAdmin();
+      onClose();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title={`Merge or delete ${brand.name}`}
+      footer={
+        <>
+          <button type="button" onClick={onClose} className={btnQuiet} data-autofocus>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void confirm()}
+            disabled={busy || !ready}
+            className={mode === "delete" ? btnPrimary.replace("bg-ink", "bg-neg").replace("text-on-ink", "text-white") : btnPrimary}
+          >
+            {busy ? "Working…" : mode === "merge" ? `Merge into ${targetBrand?.name ?? "…"}` : "Delete brand"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4 text-sm">
+        <p className="text-muted">
+          {fmt(brand.mentionCount)} mentions are tagged {brand.name}. Mentions are never deleted, only this brand&apos;s tag.
+        </p>
+
+        <label className={`flex gap-3 rounded-xl p-3 ring-1 ring-inset ${mode === "merge" ? "ring-ink" : "ring-line"} ${others.length ? "cursor-pointer" : "opacity-50"}`}>
+          <input type="radio" name="brand-delete" checked={mode === "merge"} disabled={!others.length} onChange={() => setMode("merge")} className="mt-1 accent-[var(--ink)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Merge into another brand</span>
+            <span className="block text-muted">
+              Same brand under another name (e.g. BANK BRI → BRI). Its keywords ({keywords.join(", ")}) move to the target, and its
+              mentions count there.
+            </span>
+            {mode === "merge" && (
+              <Select label="Merge into" className="mt-2" value={target} onChange={(e) => setTarget(e.target.value)}>
+                {others.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                    {b.isOwn ? " (own)" : ""}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </span>
+        </label>
+
+        <label className={`flex cursor-pointer gap-3 rounded-xl p-3 ring-1 ring-inset ${mode === "delete" ? "ring-neg" : "ring-line"}`}>
+          <input type="radio" name="brand-delete" checked={mode === "delete"} onChange={() => setMode("delete")} className="mt-1 accent-[var(--neg)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Delete, not relevant to this project</span>
+            <span className="block text-muted">The brand disappears from share of voice, competitor charts and reports.</span>
+            {mode === "delete" && (
+              <span className="mt-2 block space-y-2">
+                <span className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={ignore}
+                    onChange={(e) => setIgnore(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--ink)]"
+                  />
+                  <span>Mark its keywords as &ldquo;Not a brand&rdquo; so they stop showing as unmapped</span>
+                </span>
+                {needsTyping && (
+                  <span className="block">
+                    <span className="mb-1 block text-xs text-muted">
+                      Type <b className="text-ink">{brand.name}</b> to confirm
+                    </span>
+                    <input value={typed} onChange={(e) => setTyped(e.target.value)} className={field} aria-label="Brand name to confirm" />
+                  </span>
+                )}
+              </span>
+            )}
+          </span>
+        </label>
+
+        {lastOwn && mode === "delete" && (
+          <p className="text-neg">This is the project&apos;s only own brand. Share of voice and Net Sentiment need one.</p>
+        )}
+        <ErrorText text={error} />
+      </div>
+    </Sheet>
+  );
+}
+
 function BrandsTab({ project }: { project: AdminProject }) {
   const [editing, setEditing] = useState<AdminBrand | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -549,15 +663,7 @@ function BrandsTab({ project }: { project: AdminProject }) {
     }
   }
 
-  async function remove(b: AdminBrand) {
-    setError(null);
-    try {
-      await apiSend(`/api/admin/projects/${project.id}/brands/${b.id}`, "DELETE");
-      refreshAdmin();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }
+  const [deleting, setDeleting] = useState<AdminBrand | null>(null);
 
   return (
     <div className="space-y-3">
@@ -579,12 +685,10 @@ function BrandsTab({ project }: { project: AdminProject }) {
                 Edit
               </button>
               <button
-                onClick={() => void remove(b)}
-                disabled={b.mentionCount > 0}
-                title={b.mentionCount > 0 ? "Brands with mentions can't be deleted" : undefined}
-                className="min-h-9 rounded-lg px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-neg disabled:opacity-40 disabled:hover:text-muted"
+                onClick={() => setDeleting(b)}
+                className="min-h-9 rounded-lg px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-neg"
               >
-                Delete
+                Merge / delete
               </button>
             </span>
           </li>
@@ -605,6 +709,9 @@ function BrandsTab({ project }: { project: AdminProject }) {
         </button>
       </div>
       <KeywordsPanel project={project} />
+      {deleting && (
+        <DeleteBrandSheet key={deleting.id} project={project} brand={deleting} onClose={() => setDeleting(null)} />
+      )}
       {editing && (
         <BrandSheet
           key={editing === "new" ? "new" : editing.id}
