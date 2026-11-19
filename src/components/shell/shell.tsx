@@ -3,12 +3,15 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Forbidden } from "@/components/forbidden";
-import { Drawer } from "@/components/overlay";
+import { Drawer, useMedia } from "@/components/overlay";
 import { Skeleton } from "@/components/ui";
-import { ApiError } from "@/lib/api";
+import { ApiError, fetcher } from "@/lib/api";
 import { useBusy } from "@/lib/busy";
 import { canOpen, useAccess } from "@/lib/permissions";
 import { useProjectId } from "@/lib/project";
+import type { Project } from "@/lib/types";
+import useSWR from "swr";
+import { BottomNav } from "./bottom-nav";
 import { FilterBar, Status } from "./filter-bar";
 import { firstAllowed, NavContent, Sidebar, useCurrentPageLabel } from "./sidebar";
 
@@ -49,6 +52,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const scrolled = useScrolled();
   const pastTitle = useScrolled(56);
   const busy = useBusy(250);
+  const desktop = useMedia("(min-width: 768px)");
+  const { data: projects } = useSWR<Project[]>("/api/projects", fetcher);
+  const projectName = projects?.find((p) => p.id === projectId)?.name ?? "";
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -59,33 +65,34 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <div className="min-w-0 flex-1">
         {/* One floating, translucent layer: phone top bar plus the filters. Content scrolls under it. */}
         <div data-scrolled={scrolled} className={`toolbar sticky top-0 z-30 px-4 pt-[env(safe-area-inset-top)] md:top-3 md:mx-5 md:mt-3 md:rounded-[22px] md:px-3 ${showFilters ? "" : "md:hidden"}`}>
-          <div className="flex min-h-12 items-center gap-2 md:hidden">
+          {/* Phone: one row. Menu, where you are, then period and filters. Everything else lives in the sheet. */}
+          <div className="flex min-h-14 items-center gap-2 md:hidden">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
               aria-expanded={menuOpen}
-              className="-ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ink"
+              className="-ml-2 flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-ink"
             >
               <MenuIcon />
             </button>
-            {/* iOS large-title pattern: the small title appears once the page's own title has scrolled away. */}
-            <span
-              aria-hidden={!pastTitle}
-              className={`t-headline truncate transition-opacity duration-200 ${pastTitle ? "opacity-100" : "opacity-0"}`}
-            >
-              {pageLabel}
-            </span>
-            <span className="ml-auto">{showFilters && <Status />}</span>
+            {/* Project name until the page title scrolls away, then the page name (iOS large-title pattern). */}
+            <span className="t-headline min-w-0 flex-1 truncate">{pastTitle ? pageLabel : projectName}</span>
+            {showFilters && !desktop && (
+              <>
+                <Status compact />
+                <FilterBar projectId={projectId} />
+              </>
+            )}
           </div>
-          {showFilters && (
-            <div className="pb-3 md:py-2.5">
+          {showFilters && desktop && (
+            <div className="py-2.5">
               <FilterBar projectId={projectId} />
             </div>
           )}
         </div>
 
-        <main data-busy={busy && showFilters} className="busy-fade space-y-5 px-4 pb-10 pt-4 md:px-8 md:pt-4">
+        <main data-busy={busy && showFilters} className="busy-fade space-y-5 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 md:px-8 md:pb-10 md:pt-4">
           {denied ? (
             <Forbidden
               kind={notMember ? "project" : "page"}
@@ -105,6 +112,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </main>
       </div>
+
+      {access && !notMember && <BottomNav projectId={projectId} onMore={() => setMenuOpen(true)} />}
 
       <Drawer open={menuOpen} onClose={closeMenu} label="Menu">
         <div className="flex min-h-full flex-col pb-4">

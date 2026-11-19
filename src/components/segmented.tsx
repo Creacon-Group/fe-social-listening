@@ -98,7 +98,7 @@ export function Segmented<T extends string>({
             onPointerUp={() => setPressed(false)}
             onPointerLeave={() => setPressed(false)}
             className={`relative whitespace-nowrap rounded-full font-semibold transition-colors duration-200 ${
-              size === "sm" ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3.5 text-[0.8125rem]"
+              size === "sm" ? "min-h-10 px-2.5 text-xs md:min-h-8" : "min-h-11 px-3.5 text-[0.8125rem] md:min-h-9"
             } ${active ? "text-ink" : "text-muted hover:text-ink"}`}
           >
             {active && (

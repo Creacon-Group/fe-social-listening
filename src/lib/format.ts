@@ -22,8 +22,11 @@ const dateTime = new Intl.DateTimeFormat("en-GB", {
 /** "2026-09-24" -> "24 Sep" (dates from the API are already WIB calendar days). */
 export const fmtDay = (ymd: string) => monthShort.format(new Date(`${ymd}T00:00:00Z`));
 export const fmtDayLong = (ymd: string) => fullDate.format(new Date(`${ymd}T00:00:00Z`));
+/** "13 Nov to 19 November 2026". The start keeps its year when it differs, so a 1-year period never reads backwards. */
 export const fmtPeriod = (p: { from: string; to: string }) =>
-  p.from === p.to ? fmtDayLong(p.from) : `${fmtDay(p.from)} to ${fmtDayLong(p.to)}`;
+  p.from === p.to
+    ? fmtDayLong(p.from)
+    : `${p.from.slice(0, 4) === p.to.slice(0, 4) ? fmtDay(p.from) : `${fmtDay(p.from)} ${p.from.slice(0, 4)}`} to ${fmtDayLong(p.to)}`;
 export const fmtDateTime = (iso: string) => `${dateTime.format(new Date(iso))} WIB`;
 
 export const CHANNEL_LABEL: Record<Channel, string> = {

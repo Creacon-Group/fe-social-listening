@@ -13,7 +13,8 @@ import { fetcher } from "@/lib/api";
 import { filterQuery, useFilters } from "@/lib/filters";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtPct, fmtPeriod, fmtSigned, TYPE_LABEL } from "@/lib/format";
 import { nssHint, useBrands, useProjectId, useSettings } from "@/lib/project";
-import type { Competitors, Influencers, Keywords, Overview, Topics } from "@/lib/types";
+import { useAccess } from "@/lib/permissions";
+import type { Competitors, Influencers, InsightSummary, Keywords, Overview, Topics } from "@/lib/types";
 
 type Metric = "mentions" | "engagements" | "reach";
 
@@ -89,6 +90,27 @@ function OwnedEarned({ o }: { o: Overview }) {
   );
 }
 
+/** Latest AI briefing (written every morning by the daily job), so the page opens with the "so what". */
+function LatestBrief({ projectId, q }: { projectId: number; q: string }) {
+  const { can } = useAccess(projectId);
+  const allowed = can("insights.view");
+  const { data } = useSWR<InsightSummary[]>(allowed ? `/api/projects/${projectId}/insights` : null, fetcher);
+  const latest = data?.[0];
+  if (!latest) return null;
+  return (
+    <Link
+      href={`/projects/${projectId}/insights?${q}`}
+      className="glass pressable block rounded-[18px] p-4 md:p-5"
+    >
+      <p className="t-label text-muted">
+        Latest AI briefing · {fmtPeriod({ from: latest.periodFrom.slice(0, 10), to: latest.periodTo.slice(0, 10) })}
+      </p>
+      <p className="mt-1.5 text-[1.0625rem] font-semibold leading-snug">{latest.headline}</p>
+      <p className="mt-2 text-sm font-semibold text-accent">Read the full briefing →</p>
+    </Link>
+  );
+}
+
 export default function OverviewPage() {
   const projectId = useProjectId();
   const { filters } = useFilters();
@@ -115,6 +137,8 @@ export default function OverviewPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Summary" detail={o ? fmtPeriod(o.period) : undefined} actions={<ReportActions projectId={projectId} compact />} />
+
+      <LatestBrief projectId={projectId} q={q} />
 
       {overview.error ? (
         <Notice tone="error">Couldn&apos;t load the summary: {overview.error.message}</Notice>
@@ -153,7 +177,7 @@ export default function OverviewPage() {
             ]}
           />
           <p className="-mt-2 text-xs text-muted">
-            Change is against {fmtPeriod(o.previousPeriod)}. Engagement is Zanroo&apos;s total and includes video views.
+            Change is against {fmtPeriod(o.previousPeriod)}. Engagement is Zanroo&apos;s own total; views are listed for reference and are not all counted in it.
           </p>
 
           <Panel title="Trend">
@@ -276,9 +300,9 @@ export default function OverviewPage() {
                 }
               >
                 <p className="text-sm text-muted">
-                  <span className="mark font-semibold text-ink">{ownNames.join(" + ")}</span> hold{" "}
-                  <span className="num font-bold text-ink">{fmtPct(c.own.sov)}</span> of brand mentions ({fmt(c.own.total)} unique
-                  mentions).
+                  <span className="mark font-semibold text-ink">{ownNames.join(" + ")}</span> {ownNames.length > 1 ? "appear" : "appears"} in{" "}
+                  <span className="num font-bold text-ink">{fmtPct(c.own.sov)}</span> of mentions that name any brand ({fmt(c.own.total)}
+                  {c.own.allMentions ? ` of ${fmt(c.own.allMentions)}` : ""}, each mention counted once).
                 </p>
                 <SovRibbon competitors={c} brandColors={brands} />
               </Panel>

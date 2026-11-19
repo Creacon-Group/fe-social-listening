@@ -154,6 +154,63 @@ function FilterChoices() {
   );
 }
 
+const PERIOD_LABEL: Record<RangePreset, string> = {
+  today: "Latest day",
+  "7d": "7 days",
+  "30d": "30 days",
+  "90d": "90 days",
+  "365d": "1 year",
+  custom: "Custom",
+};
+
+/** Period choice for the phone sheet: the top bar only shows the current period, not six segments. */
+function PeriodChoices({ setRange }: { setRange: (r: RangePreset) => void }) {
+  const { filters, setFilters } = useFilters();
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold">Period</legend>
+      <ChipGroup
+        single
+        items={(Object.keys(PERIOD_LABEL) as RangePreset[]).map((r) => ({
+          key: r,
+          label: PERIOD_LABEL[r],
+          on: filters.range === r,
+          onClick: () => setRange(r),
+        }))}
+      />
+      {filters.range === "custom" && (
+        <span className="mt-3 flex items-center gap-2 text-sm">
+          <input
+            type="date"
+            aria-label="From date"
+            value={filters.from ?? ""}
+            max={filters.to}
+            onChange={(e) => setFilters({ from: e.target.value })}
+            className="min-h-11 flex-1 rounded-lg bg-card px-2 ring-1 ring-line ring-inset"
+          />
+          <span className="text-muted">to</span>
+          <input
+            type="date"
+            aria-label="To date"
+            value={filters.to ?? ""}
+            min={filters.from}
+            onChange={(e) => setFilters({ to: e.target.value })}
+            className="min-h-11 flex-1 rounded-lg bg-card px-2 ring-1 ring-line ring-inset"
+          />
+        </span>
+      )}
+    </fieldset>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 text-muted" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 4.5 6 7.5l3-3" />
+    </svg>
+  );
+}
+
 /** Removable chip for one active filter, shown next to the Filters button on wide screens. */
 function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   const reduce = useReducedMotion();
@@ -177,8 +234,19 @@ function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }
   );
 }
 
-export function Status() {
+export function Status({ compact = false }: { compact?: boolean }) {
   const busy = useBusy();
+  if (compact)
+    return (
+      <span role="status" aria-live="polite" className="flex w-4 items-center justify-center">
+        {busy && (
+          <>
+            <span aria-hidden className="h-3.5 w-3.5 animate-spin rounded-full border-[1.5px] border-muted/30 border-t-muted" />
+            <span className="sr-only">Updating</span>
+          </>
+        )}
+      </span>
+    );
   return (
     <span role="status" aria-live="polite" className="t-caption flex min-w-[5.5rem] items-center justify-end gap-1.5 text-muted">
       <AnimatePresence>
@@ -227,6 +295,62 @@ export function FilterBar({ projectId }: { projectId: number }) {
       to: filters.to ?? asOf ?? undefined,
     });
   };
+
+  if (!desktop) {
+    const periodLabel =
+      filters.range === "custom" && filters.from && filters.to
+        ? `${fmtDay(filters.from)} – ${fmtDay(filters.to)}`
+        : filters.range === "today" && asOf
+          ? fmtDay(asOf)
+          : PERIOD_LABEL[filters.range];
+    return (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={`Period: ${periodLabel}. Change period and filters`}
+          onClick={() => setOpen(true)}
+          className={`${btnQuiet} min-h-11 gap-1.5 px-3.5 text-[0.8125rem]`}
+        >
+          {periodLabel}
+          <ChevronIcon />
+        </button>
+        <button
+          ref={trigger}
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+          aria-label={count ? `Filters, ${count} on` : "Filters"}
+          className={`${count ? btnPrimary : btnQuiet} min-h-11 min-w-11 px-3`}
+        >
+          <SlidersIcon />
+          {count ? count : null}
+        </button>
+        <Sheet
+          open={open}
+          onClose={close}
+          title="Period and filters"
+          footer={
+            <>
+              <button type="button" onClick={() => setFilters(cleared)} disabled={!count} className={btnQuiet}>
+                Clear filters
+              </button>
+              <button type="button" onClick={close} className={btnPrimary} data-autofocus>
+                Done
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-5">
+            <PeriodChoices setRange={setRange} />
+            <FilterChoices />
+          </div>
+        </Sheet>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

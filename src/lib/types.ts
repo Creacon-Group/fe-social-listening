@@ -157,7 +157,8 @@ export interface Competitors {
   interval: Interval;
   buckets: string[];
   totalBrandMentions: number;
-  own: Counts & { sov: number };
+  /** Own brands as one group, each mention once. sov = own mentions / allMentions (unique mentions naming any brand). */
+  own: Counts & { sov: number; allMentions?: number };
   brands: BrandStat[];
   trend: (Counts & { day: string; brandId: number; engagements: number; reach: number })[];
 }

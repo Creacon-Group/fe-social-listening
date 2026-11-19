@@ -43,6 +43,31 @@ export function fmtBucket(key: string, interval: Interval, long = false): string
   }
 }
 
+/** Now as a WIB wall-clock string, "2026-11-19 12:00" (bucket keys from the API are WIB too). */
+const nowWib = () => new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 16).replace("T", " ");
+
+/** True when the bucket has not ended yet, so its value is still growing (today, this hour, this week...). */
+export function isOpenBucket(key: string, interval: Interval): boolean {
+  const now = nowWib();
+  const today = now.slice(0, 10);
+  switch (interval) {
+    case "hour":
+      return key === `${now.slice(0, 13)}:00`;
+    case "week": {
+      const end = new Date(new Date(`${key}T00:00:00Z`).getTime() + 7 * 86_400_000).toISOString().slice(0, 10);
+      return key <= today && today < end;
+    }
+    case "month":
+      return key === today.slice(0, 7);
+    case "quarter":
+      return key === `${today.slice(0, 4)}-Q${Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1}`;
+    case "year":
+      return key === today.slice(0, 4);
+    default:
+      return key === today;
+  }
+}
+
 const tooltipStyle = {
   borderRadius: 10,
   border: "none",
@@ -71,10 +96,21 @@ export function ComboChart({
   height?: string;
 }) {
   if (days.length < 2) return <p className="text-sm text-muted">Pick a longer period or a shorter interval to see the trend.</p>;
+  // The running bucket is still filling up. Draw the line into it faintly, so a half day never reads as a drop.
+  const open = isOpenBucket(String(days[days.length - 1].day), interval);
+  const last = days.length - 1;
+  const data = days.map((d, i) => ({
+    ...d,
+    doneTotal: open && i === last ? null : d.total,
+    doneSecondary: open && i === last ? null : d[secondary],
+    openTotal: open && i >= last - 1 ? d.total : null,
+    openSecondary: open && i >= last - 1 ? d[secondary] : null,
+  }));
   return (
+    <>
     <div className={height}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={days} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
           <CartesianGrid stroke="var(--line)" vertical={false} />
           <XAxis
             dataKey="day"
@@ -102,14 +138,28 @@ export function ComboChart({
             width={52}
           />
           <Tooltip
-            labelFormatter={(k) => fmtBucket(String(k), interval, true)}
-            formatter={(v, name) => [fmt(Number(v)), name]}
-            contentStyle={tooltipStyle}
+            content={({ active, payload, label }) => {
+              // Each metric once: the faint "so far" series only where the solid one has no value.
+              const rows = (payload ?? []).filter((p) => p.value != null);
+              const solid = new Set(rows.filter((p) => String(p.dataKey).startsWith("done")).map((p) => String(p.dataKey).slice(4)));
+              const shown = rows.filter((p) => !(String(p.dataKey).startsWith("open") && solid.has(String(p.dataKey).slice(4))));
+              if (!active || !shown.length) return null;
+              return (
+                <div style={{ ...tooltipStyle, padding: "8px 10px" }}>
+                  <p className="mb-1 font-semibold">{fmtBucket(String(label), interval, true)}</p>
+                  {shown.map((p) => (
+                    <p key={String(p.dataKey)} className="num">
+                      {p.name}: {fmt(Number(p.value))}
+                    </p>
+                  ))}
+                </div>
+              );
+            }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
           <Line
             yAxisId="left"
-            dataKey="total"
+            dataKey="doneTotal"
             name="Mentions"
             stroke="var(--ink)"
             strokeWidth={2.5}
@@ -118,7 +168,7 @@ export function ComboChart({
           />
           <Line
             yAxisId="right"
-            dataKey={secondary}
+            dataKey="doneSecondary"
             name={SECONDARY_LABEL[secondary]}
             stroke="var(--accent)"
             strokeWidth={2}
@@ -126,9 +176,39 @@ export function ComboChart({
             dot={false}
             isAnimationActive={false}
           />
+          {open && (
+            <Line
+              yAxisId="left"
+              dataKey="openTotal"
+              name="Mentions (so far)"
+              stroke="var(--ink)"
+              strokeOpacity={0.3}
+              strokeWidth={2.5}
+              strokeDasharray="2 4"
+              dot={false}
+              legendType="none"
+              isAnimationActive={false}
+            />
+          )}
+          {open && (
+            <Line
+              yAxisId="right"
+              dataKey="openSecondary"
+              name={`${SECONDARY_LABEL[secondary]} (so far)`}
+              stroke="var(--accent)"
+              strokeOpacity={0.3}
+              strokeWidth={2}
+              strokeDasharray="2 4"
+              dot={false}
+              legendType="none"
+              isAnimationActive={false}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
+    {open && <p className="text-xs text-muted">The last point is still in progress, so it is drawn faint. It fills in as data arrives.</p>}
+    </>
   );
 }
 

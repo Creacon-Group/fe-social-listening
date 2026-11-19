@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMedia } from "@/components/overlay";
 import { SentimentChip } from "@/components/ui";
 import { CHANNEL_LABEL, fmt, fmtCompact, fmtDateTime, webUrl } from "@/lib/format";
 import { brandColor } from "@/lib/project";
@@ -14,7 +15,17 @@ const POST_TYPE: Record<string, string> = {
   Shared: "Share",
 };
 
-const LONG = 320;
+/** Characters before "Show more": phones clamp to 3 lines so a scroll shows several mentions, not one. */
+const LONG = { phone: 140, desktop: 320 };
+
+/** "liputan6.com" from a link, for news and blog mentions that have no author. */
+function siteOf(url: string | null) {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "") : null;
+  } catch {
+    return null;
+  }
+}
 
 /** YouTube thumbnails can be derived from the link; other channels only have what the export gives. */
 function youtubeThumb(url: string | null) {
@@ -71,14 +82,15 @@ function Metric({ label, value }: { label: string; value: number }) {
 export function MentionCard({ m }: { m: Mention }) {
   const [expanded, setExpanded] = useState(false);
   const handle = m.authorHandle?.replace(/^@/, "") || null; // YouTube handles already start with @
-  const name = m.authorName ?? (handle ? `@${handle}` : "Unknown author");
+  const desktop = useMedia("(min-width: 768px)");
+  const name = m.authorName ?? (handle ? `@${handle}` : (siteOf(webUrl(m.url)) ?? "Unknown author"));
   const showHandle = handle && m.authorName && m.authorName.replace(/^@/, "") !== handle;
   const isComment = m.postType === "Commented";
   const url = webUrl(m.url);
   const userLink = webUrl(m.preview.userLink);
   const image = m.preview.images[0] ?? youtubeThumb(m.url);
   const text = m.content ?? "";
-  const long = text.length > LONG;
+  const long = text.length > (desktop ? LONG.desktop : LONG.phone);
   const hasParent = isComment && (m.title || m.preview.where);
 
   return (
@@ -86,7 +98,7 @@ export function MentionCard({ m }: { m: Mention }) {
       <header className="flex items-start gap-3">
         <span
           aria-hidden
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xs font-bold text-muted"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-xs font-bold text-muted md:h-10 md:w-10"
         >
           {initials(name)}
         </span>
@@ -134,23 +146,23 @@ export function MentionCard({ m }: { m: Mention }) {
         </div>
       ) : (
         m.title &&
-        m.title !== m.content && <h3 className="mt-4 font-semibold leading-snug">{m.title}</h3>
+        m.title !== m.content && <h3 className="mt-3 line-clamp-2 font-semibold leading-snug md:mt-4 md:line-clamp-none">{m.title}</h3>
       )}
 
       <div className={`mt-3 flex gap-4 ${hasParent ? "" : "items-start"}`}>
         <div className="min-w-0 flex-1">
           <p
-            className={`max-w-[72ch] whitespace-pre-line break-words text-[0.95rem] leading-relaxed ${long && !expanded ? "line-clamp-6" : ""}`}
+            className={`max-w-[72ch] whitespace-pre-line break-words text-[0.95rem] leading-relaxed ${long && !expanded ? "line-clamp-3 md:line-clamp-6" : ""}`}
           >
             {text || <span className="text-muted">No text (for example a sticker-only comment).</span>}
           </p>
           {long && (
-            <button onClick={() => setExpanded((v) => !v)} className="mt-1 text-xs font-semibold text-ink hover:underline">
+            <button onClick={() => setExpanded((v) => !v)} className="-ml-1 mt-0.5 min-h-10 px-1 text-xs font-semibold text-ink hover:underline md:min-h-0">
               {expanded ? "Show less" : "Show more"}
             </button>
           )}
         </div>
-        {!hasParent && image && <Thumb src={image} href={url} className="h-24 w-24 sm:h-28 sm:w-28" />}
+        {!hasParent && image && <Thumb src={image} href={url} className="h-16 w-16 sm:h-28 sm:w-28" />}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">

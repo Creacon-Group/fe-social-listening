@@ -95,7 +95,9 @@ export default function CompetitorsPage() {
                 <span className="num mark text-5xl font-bold tracking-[-0.04em]">{fmtPct(data.own.sov)}</span>
               </p>
               <p className="max-w-md pb-1.5 text-sm text-muted">
-                Your brands ({ownNames}) appear in {fmt(data.own.total)} unique mentions, with a combined net sentiment of{" "}
+                Your brands ({ownNames}) appear in {fmt(data.own.total)}
+                {data.own.allMentions ? ` of the ${fmt(data.own.allMentions)}` : ""} mentions that name any brand, each mention counted once,
+                with a combined net sentiment of{" "}
                 <span className="num font-semibold text-ink">{fmtSigned(data.own.netSentiment)}</span>.
               </p>
             </div>
